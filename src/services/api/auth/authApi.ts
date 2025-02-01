@@ -20,9 +20,10 @@ export const login = createAsyncThunk(
 
 export const register = createAsyncThunk(
     "auth/register",
-    async (credential: { email: string; password: string }, {rejectWithValue}) => {
+    async (credential: {username: string, name:string, email: string; password: string }, {rejectWithValue}) => {
         try {
-            const response = await axiosInstance.post("/auth/register", credential);
+            console.log(credential,"inside thunk register fun")
+            const response = await axiosInstance.post("/user/register", credential);
             return response.data;
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
@@ -32,3 +33,19 @@ export const register = createAsyncThunk(
             }
         }
 })
+
+// export const usernameCheck = createAsyncThunk(
+//     "user/usernameCheck",
+//     async(payload: {username:string}, {rejectWithValue}) =>{
+//         try {
+//             const response = await axiosInstance.post("/user/checkUsernameAvailability", payload.username);
+//             console.log(response);
+//         } catch (error) {
+//             if (axios.isAxiosError(error) && error.response) {
+//                 return rejectWithValue(error.response.data);
+//             } else {
+//                 return rejectWithValue(error);
+//             }
+//         }
+//     }
+// )

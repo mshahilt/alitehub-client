@@ -1,0 +1,95 @@
+import { useState, useRef, ChangeEvent, KeyboardEvent } from "react";
+import { X } from "lucide-react";
+import { register } from "../../services/api/auth/authApi";
+import { AppDispatch } from "../../app/redux/store";
+import { useDispatch } from "react-redux";
+
+interface EmailVerificationModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    user: any;
+}
+
+export default function EmailVerificationModal({ isOpen, onClose, user }: EmailVerificationModalProps) {
+    const dispatch = useDispatch<AppDispatch>();
+    const [otp, setOtp] = useState<string[]>(["", "", "", ""]);
+    const inputsRef = useRef<HTMLInputElement[]>([]);
+
+    const handleChange = (index: number, value: string) => {
+        if (!/^\d?$/.test(value)) return; // Only allow numbers (0-9)
+
+        const newOtp = [...otp];
+        newOtp[index] = value;
+        setOtp(newOtp);
+
+        if (value && index < otp.length - 1) {
+            inputsRef.current[index + 1]?.focus(); // Move to next input
+        }
+    };
+
+    const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Backspace" && !otp[index] && index > 0) {
+            inputsRef.current[index - 1]?.focus(); // Move to previous input
+        }
+    };
+
+    const handleSubmit = async () => {
+        const otpCode = otp.join("");
+        if (otpCode.length !== 4) {
+            alert("Please enter a valid 4-digit OTP code.");
+            return;
+        }
+        try {
+            const response = await dispatch(register({ ...user, otp: otpCode }));
+            if (response.meta.requestStatus === "fulfilled") {
+                alert("Account verified successfully!");
+                onClose();
+            } else {
+                alert("Failed to verify account. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error verifying account:", error);
+            alert("An error occurred. Please try again.");
+        }
+    };
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center">
+            <div className="relative bg-gray-900 text-white p-6 rounded-2xl w-full max-w-md shadow-xl">
+                <button className="absolute top-3 right-3 text-gray-400 hover:text-white" onClick={onClose}>
+                    <X size={24} />
+                </button>
+                <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-semibold">Email Verification</h2>
+                    <p className="text-gray-400 text-sm">We have sent a code to your email {user.email}</p>
+                </div>
+                <div className="mt-6 flex justify-center gap-3">
+                    {otp.map((digit, index) => (
+                        <input
+                            key={index}
+                            type="text"
+                            className="w-14 h-14 text-center text-xl rounded-lg bg-gray-800 border border-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
+                            value={digit}
+                            onChange={(e) => handleChange(index, e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(index, e)}
+                            maxLength={1}
+                            ref={(el) => {
+                                if (el) inputsRef.current[index] = el;
+                            }}
+                        />
+                    ))}
+                </div>
+                <button className="mt-6 w-full py-3 bg-blue-600 rounded-lg hover:bg-blue-700" onClick={handleSubmit}>
+                    Verify Account
+                </button>
+                <div className="mt-4 text-center text-sm text-gray-400">
+                    <p>
+                        Didn't receive a code?{' '}
+                        <button className="text-blue-400 hover:underline">Resend</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { fetchUser } from "../../services/api/user/userApi";
+import { fetchUser } from "../../../services/api/user/userApi";
 
 interface UserState {
     user: {name: string; email: string} | null;
