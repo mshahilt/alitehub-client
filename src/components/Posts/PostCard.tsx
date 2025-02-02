@@ -1,7 +1,16 @@
 import { Heart, MessageSquare, Share2, MoreHorizontal } from "lucide-react";
 import postData from "../../app/data/postData";
+import { useEffect } from "react";
+import axiosInstance from "../../services/api/instance";
 
 const PostCard = () => {
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await axiosInstance.get('/');
+      console.log(response);
+    };
+    fetchData();
+  }, [])
   return (
     <div className="space-y-6 w-full">
       {postData.map((post, index) => (

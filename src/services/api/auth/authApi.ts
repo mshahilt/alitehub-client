@@ -34,6 +34,27 @@ export const register = createAsyncThunk(
         }
 })
 
+export const generateOtp = createAsyncThunk(
+    "auth/generateOtp",
+    async (email: string, { rejectWithValue }) => {
+        try {
+            console.log(email, "inside async thunk of generated otp");
+            console.log("Sending request with:", { email });
+
+            const response = await axiosInstance.post("/user/generateOtp", { email });
+
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response) {
+                return rejectWithValue(error.response.data.message || "An error occurred");
+            } else {
+                return rejectWithValue("Something went wrong");
+            }
+        }
+    }
+);
+
+
 // export const usernameCheck = createAsyncThunk(
 //     "user/usernameCheck",
 //     async(payload: {username:string}, {rejectWithValue}) =>{

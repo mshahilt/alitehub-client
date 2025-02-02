@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { login, register } from "../../../services/api/auth/authApi";
+import { login, register, generateOtp } from "../../../services/api/auth/authApi";
 import axiosInstance from "../../../services/api/instance";
 import axios from "axios";
 
@@ -106,6 +106,18 @@ const authSlice = createSlice({
             state.error = typeof action.payload === 'string' ? action.payload : "Username check failed";
             state.isUsernameAvailable.status = false; 
         });
+        builder.addCase(generateOtp.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        })
+        builder.addCase(generateOtp.fulfilled, (state) => {
+            state.loading = false;
+            state.error = null;
+        })
+        builder.addCase(generateOtp.rejected, (state, action) => {
+            state.loading = true;
+            state.error = typeof action.payload === 'string' ? action.payload : "otp genartion failed";
+        })
     }
 });
 

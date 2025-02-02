@@ -7,6 +7,8 @@ import { AuthState } from "../../../app/redux/slices/authSlice";
 import debounce from "lodash.debounce";
 import LoadingScreen from "../../Loading/Loading";
 import EmailVerificationModal from "../../Otp/OtpModal";
+import { generateOtp } from "../../../services/api/auth/authApi";
+import {toast} from "react-toastify";
 
 const RegisterForm = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -115,6 +117,9 @@ const RegisterForm = () => {
     }
   
     setIsModalOpen(true);
+    dispatch(generateOtp(formData.email));
+    toast.success('OTP sent successfully! Verify now.');
+  
     // try {
     //   const action = await dispatch(register(formData));
   

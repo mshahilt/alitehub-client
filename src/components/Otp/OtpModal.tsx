@@ -1,8 +1,10 @@
-import { useState, useRef, ChangeEvent, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent } from "react";
 import { X } from "lucide-react";
 import { register } from "../../services/api/auth/authApi";
 import { AppDispatch } from "../../app/redux/store";
 import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 interface EmailVerificationModalProps {
     isOpen: boolean;
@@ -11,45 +13,50 @@ interface EmailVerificationModalProps {
 }
 
 export default function EmailVerificationModal({ isOpen, onClose, user }: EmailVerificationModalProps) {
+    const navigate = useNavigate();
     const dispatch = useDispatch<AppDispatch>();
     const [otp, setOtp] = useState<string[]>(["", "", "", ""]);
     const inputsRef = useRef<HTMLInputElement[]>([]);
 
     const handleChange = (index: number, value: string) => {
-        if (!/^\d?$/.test(value)) return; // Only allow numbers (0-9)
+        if (!/^\d?$/.test(value)) return; 
 
         const newOtp = [...otp];
         newOtp[index] = value;
         setOtp(newOtp);
 
         if (value && index < otp.length - 1) {
-            inputsRef.current[index + 1]?.focus(); // Move to next input
+            inputsRef.current[index + 1]?.focus(); 
         }
     };
 
     const handleKeyDown = (index: number, e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Backspace" && !otp[index] && index > 0) {
-            inputsRef.current[index - 1]?.focus(); // Move to previous input
+            inputsRef.current[index - 1]?.focus(); 
         }
     };
 
     const handleSubmit = async () => {
         const otpCode = otp.join("");
         if (otpCode.length !== 4) {
-            alert("Please enter a valid 4-digit OTP code.");
+            toast.warn("Please enter a valid 4-digit OTP code.");
             return;
         }
         try {
             const response = await dispatch(register({ ...user, otp: otpCode }));
+
+            console.log("response after otp verification",response);
             if (response.meta.requestStatus === "fulfilled") {
-                alert("Account verified successfully!");
+                toast.success("Account verified successfully!");
+                localStorage.setItem("token",response.payload.user.token)
+                navigate('/')
                 onClose();
             } else {
-                alert("Failed to verify account. Please try again.");
+                toast.warning("Failed to verify account. Please try again.");
             }
         } catch (error) {
             console.error("Error verifying account:", error);
-            alert("An error occurred. Please try again.");
+            toast.error("An error occurred. Please try again.");
         }
     };
     if (!isOpen) return null;
