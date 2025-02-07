@@ -1,10 +1,12 @@
 import React, { useState, FormEvent } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from "../../../app/redux/store";
-import { login } from '../../../services/api/auth/authApi';
+import { login, googleLogin } from '../../../services/api/auth/authApi';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import { UserAuthState } from "../../../app/redux/slices/user/userAuthSlice";
 import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from "jwt-decode";
+import LoadingScreen from '../../Loading/Loading';
 
 interface FormData {
   email: string;
@@ -13,6 +15,7 @@ interface FormData {
 
 const LoginForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const { loading } = useSelector((state: { auth: UserAuthState }) => state.auth);
 
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -43,7 +46,6 @@ const LoginForm: React.FC = () => {
     try {
       const action = await dispatch(login(formData));
       if (login.fulfilled.match(action)) {
-        console.log(action.payload);
         toast.success(action.payload.user.message);
       }
     } catch (error) {
@@ -53,62 +55,45 @@ const LoginForm: React.FC = () => {
     }
   };
 
-  const handleGoogleLoginSuccess = async (response: any): Promise<void> => {
+  const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
-      const { credential } = response;
+      const { credential } = credentialResponse;
+      const decoded: any = jwtDecode(credential);
+      console.log("Google User Info:", decoded);
 
-      // Fetch user profile from Google
-      const userInfoResponse = await axios.get(
-        "https://www.googleapis.com/oauth2/v3/userinfo",
-        {
-          headers: { Authorization: `Bearer ${credential}` },
-        }
-      );
-
-      const userData = userInfoResponse.data;
-      console.log("Google User Data:", userData);
-
-      // Send the Google user data to your backend for authentication
-      const backendResponse = await axios.post(
-        "http://localhost:5000/api/user/google/auth",
-        { userData }
-      );
-
-      console.log("Backend Response:", backendResponse.data);
-
-      if (backendResponse.data.token) {
-        localStorage.setItem("token", backendResponse.data.token);
+      const response = await dispatch(googleLogin(credential));
+      console.log("google response",response)
+      if (googleLogin.fulfilled.match(response)) {
+        toast.success("Google login successful!");
+      } else {
+        toast.error("Google login failed.");
       }
     } catch (error) {
-      console.error("Google login error:", error);
+      toast.error("Google authentication error.");
     }
   };
 
-  const handleGoogleLoginFailure = (): void => {
-    console.error("Google Login Failed");
+  const handleGoogleError = () => {
+    console.error('Google Login Failed');
+    toast.error("Google login failed. Please try again.");
   };
 
   return (
+    <>
+    {loading ? <LoadingScreen /> : ''}
     <div className="min-h-screen bg-primary flex items-center justify-center p-4">
       <div className="max-w-2xl w-full bg-secondary rounded-2xl shadow-2xl overflow-hidden">
         <div className="w-full p-8 lg:p-12">
           <div className="flex justify-center lg:justify-start">
-            <img
-              src="/images/logo.png"
-              className="h-12 w-auto"
-              alt="Logo"
-            />
+            <img src="/images/logo.png" className="h-12 w-auto" alt="Logo" />
           </div>
 
           <div className="mt-12">
             <h2 className="text-3xl font-bold text-white mb-8">Welcome back</h2>
 
-            {/* Google Login Button */}
-            <GoogleLogin
-              onSuccess={handleGoogleLoginSuccess}
-              onError={handleGoogleLoginFailure}
-              useOneTap
-            />
+            <div className="w-full flex items-center justify-center gap-2 py-3 border rounded-lg border-gray-700 bg-gray-800 hover:bg-gray-700 transition-all duration-300 transform hover:scale-[1.02] px-4">
+              <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+            </div>
 
             <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
@@ -124,12 +109,7 @@ const LoginForm: React.FC = () => {
                 <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                   Email address
                 </label>
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
+                <input id="email" type="email" name="email" value={formData.email} onChange={handleChange}
                   className="w-full px-4 py-3 rounded-xl text-gray-100 bg-gray-700 border border-gray-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors duration-200"
                   placeholder="Enter your email"
                 />
@@ -139,66 +119,28 @@ const LoginForm: React.FC = () => {
                 <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                   Password
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
+                <input id="password" type="password" name="password" value={formData.password} onChange={handleChange}
                   className="w-full px-4 py-3 rounded-xl text-gray-100 bg-gray-700 border border-gray-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors duration-200"
                   placeholder="Enter your password"
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-600 text-indigo-500 focus:ring-indigo-500 bg-gray-700"
-                  />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
-                    Remember me
-                  </label>
-                </div>
-                <a href="#" className="text-sm font-medium text-indigo-400 hover:text-indigo-300">
-                  Forgot password?
-                </a>
-              </div>
+              {error && <p className="text-sm text-center text-red-400">{error}</p>}
 
-              {error && (
-                <p className="text-sm text-center text-red-400">{error}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl p-3 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Signing in...
-                  </span>
-                ) : (
-                  'Sign in'
-                )}
+              <button type="submit" disabled={isLoading}
+                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl p-3 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                {isLoading ? "Signing in..." : "Sign in"}
               </button>
             </form>
 
             <p className="mt-8 text-center text-sm text-gray-400">
-              Don't have an account?{' '}
-              <a href="/register" className="font-medium text-indigo-400 hover:text-indigo-300">
-                Create one now
-              </a>
+              Don't have an account? <a href="/register" className="font-medium text-indigo-400 hover:text-indigo-300">Create one now</a>
             </p>
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 };
 

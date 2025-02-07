@@ -1,11 +1,11 @@
-
 import RegisterForm from "../../components/auth/Register/RegisterForm"
-const RegisterPage = () => {
+
+const CompanyLoginPage = () => {
   return (
     <div>
-      <RegisterForm formFor={"user"}/>
+      <RegisterForm formFor={"company"}/>
     </div>
   )
 }
 
-export default RegisterPage
+export default CompanyLoginPage

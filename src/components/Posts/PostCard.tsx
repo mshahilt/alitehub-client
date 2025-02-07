@@ -1,7 +1,7 @@
 import { Heart, MessageSquare, Share2, MoreHorizontal } from "lucide-react";
 import postData from "../../app/data/postData";
 import { useEffect } from "react";
-import axiosInstance from "../../services/api/instance";
+import axiosInstance from "../../services/api/userInstance";
 
 const PostCard = () => {
   useEffect(() => {

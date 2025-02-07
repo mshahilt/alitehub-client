@@ -10,9 +10,10 @@ interface EmailVerificationModalProps {
     isOpen: boolean;
     onClose: () => void;
     user: any;
+    userType: "user" | "company";
 }
 
-export default function EmailVerificationModal({ isOpen, onClose, user }: EmailVerificationModalProps) {
+export default function EmailVerificationModal({ isOpen, onClose, user, userType }: EmailVerificationModalProps) {
     const navigate = useNavigate();
     const dispatch = useDispatch<AppDispatch>();
     const [otp, setOtp] = useState<string[]>(["", "", "", ""]);
@@ -37,13 +38,14 @@ export default function EmailVerificationModal({ isOpen, onClose, user }: EmailV
     };
 
     const handleSubmit = async () => {
+        console.log("inside handle submit",user)
         const otpCode = otp.join("");
         if (otpCode.length !== 4) {
             toast.warn("Please enter a valid 4-digit OTP code.");
             return;
         }
         try {
-            const response = await dispatch(register({ ...user, otp: otpCode }));
+            const response = await dispatch(register({ ...user, otp: otpCode, userType:userType}));
 
             console.log("response after otp verification",response);
             if (response.meta.requestStatus === "fulfilled") {

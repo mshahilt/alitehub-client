@@ -15,6 +15,7 @@
     "@tailwindcss/vite": "^4.0.0",
     "@types/react-router-dom": "^5.3.3",
     "axios": "^1.7.9",
+    "jwt-decode": "^4.0.0",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.474.0",
     "react": "^18.3.1",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@types/jwt-decode": "^2.2.1",
     "@types/lodash.debounce": "^4.0.9",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

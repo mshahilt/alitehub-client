@@ -1,6 +1,6 @@
 import axios from "axios";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import axiosInstance from "../instance";
+import axiosInstance from "../userInstance";
 
 export const login = createAsyncThunk(
     "auth/login",
@@ -21,10 +21,19 @@ export const login = createAsyncThunk(
 
 export const register = createAsyncThunk(
     "auth/register",
-    async (credential: {username: string, name:string, email: string; password: string }, {rejectWithValue}) => {
+    async (
+        { userType, ...credential }: { 
+            userType: "user" | "company"; 
+            username: string; 
+            name: string; 
+            email: string; 
+            password: string; 
+        }, 
+        { rejectWithValue }
+    ) => {
         try {
-            console.log(credential,"inside thunk register fun")
-            const response = await axiosInstance.post("/user/register", credential);
+            console.log(credential, `inside thunk register function for ${userType}`);
+            const response = await axiosInstance.post(`/${userType}/register`, credential);
             return response.data;
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
@@ -33,7 +42,8 @@ export const register = createAsyncThunk(
                 return rejectWithValue(error);
             }
         }
-})
+    }
+);
 
 export const generateOtp = createAsyncThunk(
     "auth/generateOtp",
@@ -54,6 +64,18 @@ export const generateOtp = createAsyncThunk(
         }
     }
 );
+
+export const googleLogin = createAsyncThunk(
+    "auth/googleLogin",
+    async (token: string, { rejectWithValue }) => {
+      try {
+        const response = await axiosInstance.post("user/google-login", { token });
+        return response.data;
+      } catch (error: any) {
+        return rejectWithValue(error.response?.data?.message || "Google login failed");
+      }
+    }
+  );
 
 
 // export const usernameCheck = createAsyncThunk(

@@ -1,9 +1,9 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { login, register, generateOtp } from "../../../services/api/auth/authApi";
-import axiosInstance from "../../../services/api/instance";
+import { login, register, generateOtp, googleLogin } from "../../../../services/api/auth/authApi";
+import axiosInstance from "../../../../services/api/userInstance";
 import axios from "axios";
 
-export interface AuthState {
+export interface UserAuthState {
     user: {
         name: string;
         username: string;
@@ -19,7 +19,7 @@ export interface AuthState {
 }
 
 
-const initialState: AuthState = {
+const initialState: UserAuthState = {
     user: {
         name: "",
         username: "",
@@ -50,11 +50,11 @@ const usernameCheck = createAsyncThunk(
     }
 );
 
-const authSlice = createSlice({
+const userAuthSlice = createSlice({
     name: "auth",
     initialState,
     reducers: {
-        setFormData: (state, action: PayloadAction<{ stateType: keyof AuthState; name: keyof AuthState['user']; value: any }>) => {
+        setUserFormData: (state, action: PayloadAction<{ stateType: keyof UserAuthState; name: keyof UserAuthState['user']; value: any }>) => {
             const { stateType, name, value } = action.payload;
             if (stateType === "user") {
                 state.user[name] = value;
@@ -72,7 +72,7 @@ const authSlice = createSlice({
             state.loading = true;
             state.error = null;
         });
-        builder.addCase(login.fulfilled, (state, action: PayloadAction<AuthState['user']>) => {
+        builder.addCase(login.fulfilled, (state, action: PayloadAction<UserAuthState['user']>) => {
             state.loading = false;
             state.user = action.payload;
         });
@@ -84,7 +84,7 @@ const authSlice = createSlice({
             state.loading = true;
             state.error = null;
         });
-        builder.addCase(register.fulfilled, (state, action: PayloadAction<AuthState['user']>) => {
+        builder.addCase(register.fulfilled, (state, action: PayloadAction<UserAuthState['user']>) => {
             state.loading = false;
             console.log("from builder",action.payload)
             state.user = action.payload;
@@ -118,9 +118,23 @@ const authSlice = createSlice({
             state.loading = true;
             state.error = typeof action.payload === 'string' ? action.payload : "otp genartion failed";
         })
+        builder.addCase(googleLogin.pending, (state) => {
+            state.loading = true;
+            state.error = null;
+        });
+        builder.addCase(googleLogin.fulfilled, (state, action: PayloadAction<UserAuthState['user']>) => {
+            state.loading = false;
+            console.log("inside add case of google login full filled", action.payload)
+            state.user = action.payload;
+        });
+        builder.addCase(googleLogin.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.error.message || "Google login failed";
+        });
+
     }
 });
 
-export const { setFormData } = authSlice.actions;
+export const { setUserFormData } = userAuthSlice.actions;
 export { usernameCheck };
-export default authSlice.reducer;
+export default userAuthSlice.reducer;

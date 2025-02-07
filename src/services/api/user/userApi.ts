@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import axiosInstance from "../instance";
+import axiosInstance from "../userInstance";
 
 export const fetchUser = createAsyncThunk(
     "user/fetchUser",

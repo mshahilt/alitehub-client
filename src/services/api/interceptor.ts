@@ -7,7 +7,6 @@ export const setupInterceptors = (axiosInstance: AxiosInstance) => {
             if (token) {
                 config.headers.Authorization = token;
             }
-            console.log("Request Interceptor:", config);
             return config;
         },
         (error: AxiosError) => {
