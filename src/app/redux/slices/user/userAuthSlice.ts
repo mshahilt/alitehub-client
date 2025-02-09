@@ -5,6 +5,7 @@ import axios from "axios";
 
 export interface UserAuthState {
     user: {
+        accessToken: string;
         name: string;
         username: string;
         email: string;
@@ -25,6 +26,7 @@ const initialState: UserAuthState = {
         username: "",
         email: "",
         password: "",
+        accessToken: ""
     },
     loading: false,
     error: null,
@@ -38,7 +40,7 @@ const usernameCheck = createAsyncThunk(
     "auth/usernameCheck", 
     async (username: string, { rejectWithValue }) => {
         try {
-            const response = await axiosInstance.get(`/user/checkUsernameAvailability?username=${username}`);
+            const response = await axiosInstance.get(`/auth/user/checkUsernameAvailability?username=${username}`);
             return response.data; 
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
@@ -125,6 +127,7 @@ const userAuthSlice = createSlice({
         builder.addCase(googleLogin.fulfilled, (state, action: PayloadAction<UserAuthState['user']>) => {
             state.loading = false;
             console.log("inside add case of google login full filled", action.payload)
+            localStorage.setItem('token', action.payload.accessToken)
             state.user = action.payload;
         });
         builder.addCase(googleLogin.rejected, (state, action) => {

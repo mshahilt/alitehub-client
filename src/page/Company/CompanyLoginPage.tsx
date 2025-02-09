@@ -1,9 +1,9 @@
-import RegisterForm from "../../components/auth/Register/RegisterForm"
+import LoginForm from "../../components/auth/Login/LoginForm"
 
 const CompanyLoginPage = () => {
   return (
     <div>
-      <RegisterForm formFor={"company"}/>
+      <LoginForm formFor="company"/>
     </div>
   )
 }

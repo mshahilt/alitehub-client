@@ -4,10 +4,12 @@ import axiosInstance from "../userInstance";
 
 export const login = createAsyncThunk(
     "auth/login",
-    async (credential: { email: string; password: string }, {rejectWithValue}) => {
+    async (
+        credential: { userType: "user" | "company"; email: string; password: string },
+        { rejectWithValue }
+    ) => {
         try {
-            console.log(credential)
-            const response = await axiosInstance.post("/user/login", credential);
+            const response = await axiosInstance.post(`/auth/${credential.userType}/register`, credential);
             return response.data;
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
@@ -16,7 +18,8 @@ export const login = createAsyncThunk(
                 return rejectWithValue(error);
             }
         }
-})
+    }
+);
 
 
 export const register = createAsyncThunk(
@@ -33,7 +36,7 @@ export const register = createAsyncThunk(
     ) => {
         try {
             console.log(credential, `inside thunk register function for ${userType}`);
-            const response = await axiosInstance.post(`/${userType}/register`, credential);
+            const response = await axiosInstance.post(`/auth/${userType}/register`, credential);
             return response.data;
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
@@ -52,7 +55,7 @@ export const generateOtp = createAsyncThunk(
             console.log(email, "inside async thunk of generated otp");
             console.log("Sending request with:", { email });
 
-            const response = await axiosInstance.post("/user/generateOtp", { email });
+            const response = await axiosInstance.post("/auth/user/generateOtp", { email });
 
             return response.data;
         } catch (error) {
@@ -67,16 +70,22 @@ export const generateOtp = createAsyncThunk(
 
 export const googleLogin = createAsyncThunk(
     "auth/googleLogin",
-    async (token: string, { rejectWithValue }) => {
+    async (
+      { userType, token }: { userType: "user" | "company"; token: string },
+      { rejectWithValue }
+    ) => {
       try {
-        const response = await axiosInstance.post("user/google-login", { token });
+        console.log(`Google login for ${userType}`);
+        console.log(`Token: ${token}`);
+        
+        const response = await axiosInstance.post(`/auth/${userType}/google-login`, { token });
         return response.data;
       } catch (error: any) {
         return rejectWithValue(error.response?.data?.message || "Google login failed");
       }
     }
   );
-
+  
 
 // export const usernameCheck = createAsyncThunk(
 //     "user/usernameCheck",

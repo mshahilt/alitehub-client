@@ -50,8 +50,20 @@ export default function EmailVerificationModal({ isOpen, onClose, user, userType
             console.log("response after otp verification",response);
             if (response.meta.requestStatus === "fulfilled") {
                 toast.success("Account verified successfully!");
-                localStorage.setItem("token",response.payload.user.token)
-                navigate('/')
+                if (response.payload) { 
+                    if (userType === "user" && response.payload.response?.accessToken) {
+                        console.log("from handle submit in otp modal",response.payload)
+                        localStorage.setItem("token", response.payload.response.accessToken);
+                        navigate('/')
+                    } else if (response.payload.response?.accessToken) {
+                        localStorage.setItem("token", response.payload.response.accessToken);
+                        navigate('/company');
+                    } else {
+                        toast.warning("Token not found in response.");
+                    }
+                } else {
+                    toast.warning("No response payload received.");
+                }
                 onClose();
             } else {
                 toast.warning("Failed to verify account. Please try again.");

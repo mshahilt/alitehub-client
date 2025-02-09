@@ -1,9 +1,10 @@
 import LoginForm from "../../components/auth/Login/LoginForm";
 
+
 const LoginPage = () => {
   return (
     <>
-      <LoginForm />
+      <LoginForm formFor="user"/>
     </>
   )
 }

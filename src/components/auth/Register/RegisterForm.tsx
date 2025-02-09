@@ -67,7 +67,6 @@ const RegisterForm = ({ formFor }: RegisterFormProps) => {
     return { strength, label: labels[strength - 1] || "" };
   };
 
-  // Field-level validation logic, which changes based on registration type
   const validateField = (name: string, value: string) => {
     if (formFor === "company") {
       switch (name) {
@@ -87,7 +86,6 @@ const RegisterForm = ({ formFor }: RegisterFormProps) => {
           return "";
       }
     } else {
-      // User registration validations
       switch (name) {
         case "username":
           if (value.length < 3) return "Username must be at least 3 characters";

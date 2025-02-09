@@ -1,9 +1,34 @@
 import { Camera, Edit2 } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../../app/redux/store';
+import { useEffect } from 'react';
+import { fetchUserProfile } from '../../app/redux/slices/user/userSlice';
+import ProfileSkeleton from '../Loading/SkeltonProfileLoading';
 
-const ProfileComponent = () => {
+interface ProfileComponentProps {
+  username: string;
+}
+
+const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
+  const dispatch: AppDispatch = useDispatch();
+  const { data, status, error } = useSelector((state: RootState) => state.userState) as { 
+    data: { name: string, username: string;  }, 
+    status: string, 
+    error: string 
+  };
+
+  useEffect(() => {
+    dispatch(fetchUserProfile(username));
+    console.log("inside profile component",data)
+  }, [dispatch, username]); 
+
+  if (status === 'loading') {
+    return <ProfileSkeleton />;
+  }
+
   return (
     <div className="max-w-4xl mx-auto text-white bg-secondary">
-      <div className="relative">=
+      <div className="relative">
         <div className="h-32 w-full bg-gradient-to-r from-blue-400 to-blue-100 rounded-t-lg"></div>
         <div className="absolute -bottom-16 left-8">
           <div className="w-32 h-32 rounded-full border-4 border-[#1a1a2e] bg-purple-300 overflow-hidden">
@@ -19,8 +44,8 @@ const ProfileComponent = () => {
       <div className="mt-20 px-8">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold">Mohammed Shahil</h1>
-            <p className="text-gray-400 text-sm">@mshahil</p>
+            <h1 className="text-2xl font-bold">{data?.name}</h1>
+            <p className="text-gray-400 text-sm">{data?.username}</p>
           </div>
           <div className="flex items-center gap-4">
             <button className="px-4 py-2 bg-gray-800 rounded-lg text-sm">
@@ -77,7 +102,7 @@ const ProfileComponent = () => {
         </div>
       </div>
     </div>
-  );
+  );  
 };
 
 export default ProfileComponent;

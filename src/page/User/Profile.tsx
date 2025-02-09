@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import ProfileComponent from "../../components/Profile/Profile";
+import { useParams } from "react-router-dom";
 
 const Profile = () => {
     const [isExpanded, setIsExpanded] = useState(true);
-      
+    const { username } = useParams(); 
+
       useEffect(() => {
         const handleResize = () => {
           setIsExpanded(window.innerWidth > 1000);
@@ -25,7 +27,7 @@ const Profile = () => {
         </div>
         <div className="flex-1 min-h-screen ml-auto md:ml-1/4 mr-0 md:mr-1/4 flex justify-center p-1 z-2">
         <div className="w-full max-w-2xl min-h-screen">
-            <ProfileComponent/>
+            <ProfileComponent username={username as string}/>
         </div>
       </div>
     </div>
