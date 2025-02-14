@@ -80,6 +80,6 @@ body{
 @import "tailwindcss";
 @theme {
   --color-primary: #240750;
-  --color-secondary: #12012C; 
+  --color-secondary: #12012C;
 }
 

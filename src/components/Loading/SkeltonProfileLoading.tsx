@@ -1,4 +1,3 @@
-import React from 'react';
 import { Camera, Edit2 } from 'lucide-react';
 
 const ProfileSkeleton = () => {

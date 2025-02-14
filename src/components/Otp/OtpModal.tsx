@@ -54,9 +54,11 @@ export default function EmailVerificationModal({ isOpen, onClose, user, userType
                     if (userType === "user" && response.payload.response?.accessToken) {
                         console.log("from handle submit in otp modal",response.payload)
                         localStorage.setItem("token", response.payload.response.accessToken);
+                        toast.success("Authanticated Successfully.");
                         navigate('/')
                     } else if (response.payload.response?.accessToken) {
                         localStorage.setItem("token", response.payload.response.accessToken);
+                        toast.success("Authanticated Successfully.");
                         navigate('/company');
                     } else {
                         toast.warning("Token not found in response.");

@@ -1,12 +1,18 @@
-
 import { Menu } from 'lucide-react';
-import menuItems from '../../app/data/menuItems';
 
-const Sidebar = ({isExpanded, setIsExpanded}: {isExpanded: boolean, setIsExpanded: (isExpanded: boolean) => void}) => {
+import { useNavigate } from 'react-router-dom';
+const Sidebar = ({ menuItems, isExpanded, setIsExpanded, bgColor }: { 
+    menuItems: { icon: React.ComponentType<{ className?: string }>, label: string,link:string, isActive?: boolean }[], 
+    isExpanded: boolean, 
+    setIsExpanded: (isExpanded: boolean) => void,
+    bgColor?:string
+}) => {
+
+    const navigate = useNavigate();
 
     return (
         <div 
-            className={`h-screen bg-primary text-white transition-all duration-300 
+            className={`h-screen ${bgColor || 'bg-primary'} text-white transition-all duration-300 
             ${isExpanded ? 'w-56' : 'w-16'} border-r border-gray-800`}
         >
             <div className="p-4 flex items-center gap-2">
@@ -40,7 +46,7 @@ const Sidebar = ({isExpanded, setIsExpanded}: {isExpanded: boolean, setIsExpande
                         return (
                             <li key={index}>
                                 <a 
-                                    href="#" 
+                                    onClick={() => navigate(item.link)}
                                     className={`flex items-center p-3 mx-2 rounded-lg
                                         ${item.isActive ? 'text-purple-500' : 'text-gray-400'} 
                                         hover:bg-purple-900`}

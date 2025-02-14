@@ -9,8 +9,8 @@ export const login = createAsyncThunk(
         { rejectWithValue }
     ) => {
         try {
-            const response = await axiosInstance.post(`/auth/${credential.userType}/register`, credential);
-            return response.data;
+            const response = await axiosInstance.post(`/auth/${credential.userType}/login`, credential);
+            return response.data.response;
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
                 return rejectWithValue(error.response.data);
@@ -52,10 +52,9 @@ export const generateOtp = createAsyncThunk(
     "auth/generateOtp",
     async (email: string, { rejectWithValue }) => {
         try {
-            console.log(email, "inside async thunk of generated otp");
-            console.log("Sending request with:", { email });
 
             const response = await axiosInstance.post("/auth/user/generateOtp", { email });
+            console.log("from generate otp ap",response)
 
             return response.data;
         } catch (error) {
@@ -79,14 +78,14 @@ export const googleLogin = createAsyncThunk(
         console.log(`Token: ${token}`);
         
         const response = await axiosInstance.post(`/auth/${userType}/google-login`, { token });
-        return response.data;
+        console.log("jaba jaba jaba jaba",response.data)
+        return response.data.response;
       } catch (error: any) {
         return rejectWithValue(error.response?.data?.message || "Google login failed");
       }
     }
   );
   
-
 // export const usernameCheck = createAsyncThunk(
 //     "user/usernameCheck",
 //     async(payload: {username:string}, {rejectWithValue}) =>{

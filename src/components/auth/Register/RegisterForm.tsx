@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Eye, EyeOff, Check, X, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Check, X, Loader2, ChevronDown } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "../../../app/redux/store";
 import { setUserFormData, usernameCheck } from "../../../app/redux/slices/user/userAuthSlice";
@@ -9,19 +9,20 @@ import { setCompanyFormData } from "../../../app/redux/slices/company/companyAut
 import { generateOtp } from "../../../services/api/auth/authApi";
 import debounce from "lodash.debounce";
 import LoadingScreen from "../../Loading/Loading";
+import { GoogleLogin } from '@react-oauth/google';
+import { googleLogin } from '../../../services/api/auth/authApi';
+import {jwtDecode} from "jwt-decode";
 import EmailVerificationModal from "../../Otp/OtpModal";
 import { toast } from "react-toastify";
-
 interface RegisterFormProps {
-  formFor: "user" | "company";
+  formFor: "user" | "company"
 }
 
 const RegisterForm = ({ formFor }: RegisterFormProps) => {
-  console.log("Registering as:", formFor);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
 
   const userAuthState = useSelector((state: { userAuth: UserAuthState }) => state.userAuth);
   const companyAuthState = useSelector((state: { companyAuth: CompanyAuthState }) => state.companyAuth);
@@ -29,85 +30,91 @@ const RegisterForm = ({ formFor }: RegisterFormProps) => {
   const loading = formFor === "user" ? userAuthState.loading : companyAuthState.loading;
   const isUsernameAvailable = userAuthState.isUsernameAvailable;
 
-  const initialFormData =
-    formFor === "company"
-      ? {
-          companyName: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-          termsAccepted: false,
-        }
-      : {
-          username: "",
-          name: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-          termsAccepted: false,
-        };
+  const initialFormData = formFor === "company"
+    ? {
+        companyName: "",
+        companyIdentifier: "",
+        companyType: "",
+        industry: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        termsAccepted: false,
+      }
+    : {
+        username: "",
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        termsAccepted: false,
+      };
 
   const [formData, setFormDataState] = useState(initialFormData);
-
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   const dispatch = useDispatch<AppDispatch>();
 
   const getPasswordStrength = (password: string) => {
-    if (!password) return { strength: 0, label: "" };
+    if (!password) return { strength: 0, label: "", details: [] };
+    
     const checks = {
-      length: password.length >= 8,
-      upper: /[A-Z]/.test(password),
-      lower: /[a-z]/.test(password),
-      number: /[0-9]/.test(password),
-      special: /[^A-Za-z0-9]/.test(password),
+      length: { passed: password.length >= 8, message: "At least 8 characters" },
+      upper: { passed: /[A-Z]/.test(password), message: "Uppercase letter" },
+      lower: { passed: /[a-z]/.test(password), message: "Lowercase letter" },
+      number: { passed: /[0-9]/.test(password), message: "Number" },
+      special: { passed: /[^A-Za-z0-9]/.test(password), message: "Special character" },
     };
-    const strength = Object.values(checks).filter(Boolean).length;
+    
+    const strength = Object.values(checks).filter(check => check.passed).length;
     const labels = ["Weak", "Fair", "Good", "Strong", "Very Strong"];
-    return { strength, label: labels[strength - 1] || "" };
+    const details = Object.values(checks).map(check => ({
+      message: check.message,
+      passed: check.passed,
+    }));
+    
+    return { 
+      strength, 
+      label: labels[strength - 1] || "", 
+      details 
+    };
   };
 
   const validateField = (name: string, value: string) => {
-    if (formFor === "company") {
-      switch (name) {
-        case "companyName":
-          if (value.length < 3) return "Company name must be at least 3 characters";
-          return "";
-        case "email":
-          if (!/\S+@\S+\.\S+/.test(value)) return "Please enter a valid email address";
-          return "";
-        case "password":
-          if (value.length < 8) return "Password must be at least 8 characters";
-          return "";
-        case "confirmPassword":
-          if (value !== formData.password) return "Passwords do not match";
-          return "";
-        default:
-          return "";
-      }
-    } else {
-      switch (name) {
-        case "username":
-          if (value.length < 3) return "Username must be at least 3 characters";
-          if (!/^[a-zA-Z0-9_]+$/.test(value))
-            return "Username can only contain letters, numbers, and underscores";
-          return "";
-        case "name":
-          if (value.length < 2) return "Name is required";
-          return "";
-        case "email":
-          if (!/\S+@\S+\.\S+/.test(value)) return "Please enter a valid email address";
-          return "";
-        case "password":
-          if (value.length < 8) return "Password must be at least 8 characters";
-          return "";
-        case "confirmPassword":
-          if (value !== formData.password) return "Passwords do not match";
-          return "";
-        default:
-          return "";
-      }
-    }
+    const commonValidations = {
+      email: () => !/\S+@\S+\.\S+/.test(value) ? "Please enter a valid email address" : "",
+      password: () => {
+        if (value.length < 8) return "Password must be at least 8 characters";
+        if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
+        if (!/[a-z]/.test(value)) return "Password must contain at least one lowercase letter";
+        if (!/[0-9]/.test(value)) return "Password must contain at least one number";
+        if (!/[^A-Za-z0-9]/.test(value)) return "Password must contain at least one special character";
+        return ""
+      },
+      confirmPassword: () => value !== formData.password ? "Passwords do not match" : "",
+    };
+
+    const companyValidations = {
+      companyName: () => value.length < 3 ? "Company name must be at least 3 characters" : "",
+      companyIdentifier: () => value.length < 2 ? "Company identifier is required" : "",
+      companyType: () => !value ? "Please select a company type" : "",
+      industry: () => !value ? "Industry is required" : "",
+    };
+
+    const userValidations = {
+      username: () => {
+        if (value.length < 3) return "Username must be at least 3 characters";
+        if (!/^[a-zA-Z0-9_]+$/.test(value)) return "Username can only contain letters, numbers, and underscores";
+        return "";
+      },
+      name: () => value.length < 2 ? "Name is required" : "",
+    };
+
+    const validations = {
+      ...commonValidations,
+      ...(formFor === "company" ? companyValidations : userValidations),
+    };
+
+    return validations[name as keyof typeof validations]?.() || "";
   };
 
   const dbounceUsernameCheck = useCallback(
@@ -119,113 +126,183 @@ const RegisterForm = ({ formFor }: RegisterFormProps) => {
     [dispatch]
   );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     const newValue = type === "checkbox" ? checked : value;
 
-    setFormDataState((prevData) => ({
-      ...prevData,
-      [name]: newValue,
-    }));
+    setFormDataState(prev => ({ ...prev, [name]: newValue }));
 
     if (name !== "termsAccepted") {
       const error = validateField(name, value);
-      setErrors((prev) => ({ ...prev, [name]: error }));
+      setErrors(prev => ({ ...prev, [name]: error }));
     }
 
     if (formFor === "user") {
-      dispatch(
-        setUserFormData({
-          stateType: "user",
-          name: name as keyof UserAuthState["user"],
-          value: newValue,
-        })
-      );
+      dispatch(setUserFormData({
+        stateType: "user",
+        name: name as keyof UserAuthState["user"],
+        value: newValue,
+      }));
+      
+      if (name === "username") {
+        dbounceUsernameCheck(value);
+      }
     } else {
-      dispatch(
-        setCompanyFormData({
-          field: name as keyof CompanyAuthState["company"],
-          value: newValue,
-        })
-      );
-    }
-    
-    if (formFor === "user" && name === "username") {
-      dbounceUsernameCheck(value);
+      dispatch(setCompanyFormData({
+        field: name as keyof CompanyAuthState["company"],
+        value: newValue,
+      }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    let newErrors: Record<string, string> = {};
-    if (formFor === "company") {
-      console.log(formData)
-      newErrors = {
-        companyName: validateField("companyName", formData.companyName || ""),
-        email: validateField("email", formData.email || ""),
-        password: validateField("password", formData.password || ""),
-        confirmPassword: validateField("confirmPassword", formData.confirmPassword || ""),
-      };
-    } else {
-      newErrors = {
-        username: validateField("username", formData.username || ""),
-        name: validateField("name", formData.name || ""),
-        email: validateField("email", formData.email || ""),
-        password: validateField("password", formData.password || ""),
-        confirmPassword: validateField("confirmPassword", formData.confirmPassword || ""),
-      };
-    }
+    const fieldsToValidate = formFor === "company"
+      ? ["companyName", "companyIdentifier", "companyType", "industry", "email", "password", "confirmPassword"]
+      : ["username", "name", "email", "password", "confirmPassword"];
+
+    const newErrors = fieldsToValidate.reduce((acc, field) => ({
+      ...acc,
+      [field]: validateField(field, formData[field as keyof typeof formData]?.toString() || "")
+    }), {});
 
     setErrors(newErrors);
 
-    if (Object.values(newErrors).some((error) => error) || !formData.termsAccepted) {
+    if (Object.values(newErrors).some(error => error) || !formData.termsAccepted) {
+      toast.error("Please fix all errors before submitting");
       return;
     }
 
-    setIsModalOpen(true);
-    dispatch(generateOtp(formData.email));
-    toast.success("OTP sent successfully! Verify now.");
+    try {
+      setIsModalOpen(true);
+      await dispatch(generateOtp(formData.email));
+      toast.success("OTP sent successfully! Please verify your email.");
+    } catch (error) {
+      toast.error("Failed to send OTP. Please try again.");
+    }
   };
-
+  
   const passwordStrength = getPasswordStrength(formData.password);
-
+   const handleGoogleSuccess = async (credentialResponse: any) => {
+      try {
+        const { credential } = credentialResponse;
+        console.log("credential", credential);
+        const decoded: any = jwtDecode(credential);
+        console.log("Google User Info:", decoded);
+    
+        const response = await dispatch(googleLogin({ userType: formFor, token: credential }));
+        if (googleLogin.fulfilled.match(response)) {
+          console.log("from google",response)
+          localStorage.setItem("token", response.payload.accessToken)
+          toast.success("Google login successful!");
+        } else {
+          toast.error("Google login failed.");
+        }
+      } catch (error) {
+        toast.error("Google authentication error.");
+      }
+    };
+    const handleGoogleError = () => {
+        toast.error("Google login failed. Please try again.");
+      };
   return (
     <>
       {loading && <LoadingScreen />}
-      <div className="min-h-screen bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center p-3 md:p-6">
-        <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-          <div className="hidden md:flex w-full md:w-2/5 bg-gradient-to-br from-secondary to-secondary-dark p-8 md:p-12 flex-col items-center justify-center">
+      <div className="min-h-screen bg-primary flex items-center justify-center p-4">
+        <div className="w-full max-w-5xl bg-gray-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+          <div className="hidden md:flex w-full md:w-2/5 bg-gradient-to-br from-secondary to-gray-800 p-12 flex-col items-center justify-center">
             <div className="mb-8">
-              <img src="/images/logo.png" alt="logo" className="w-3/4 mx-auto" />
+              <img src="/images/logo.png" alt="logo" className="w-48 mx-auto" />
             </div>
-            <h2 className="text-white text-3xl md:text-4xl font-bold leading-tight text-center">
-              Join our community
+            <h2 className="text-white text-4xl font-bold text-center mb-6">
+              Welcome to Our Platform
             </h2>
+            <p className="text-white/80 text-center text-lg">
+              Join our community and discover amazing opportunities
+            </p>
           </div>
+
           <div className="w-full md:w-3/5 p-8 md:p-12 bg-gray-900 text-white">
-            <h1 className="text-2xl md:text-3xl font-bold mb-6">
-              {formFor === "company" ? "Create Company Account" : "Create Account"}
+            <h1 className="text-3xl font-bold mb-8">
+              {formFor === "company" ? "Create Company Account" : "Create Personal Account"}
             </h1>
-            <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
               {formFor === "company" ? (
-                <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
+                    <label className="block text-sm font-medium mb-2">Company Name</label>
                     <input
                       type="text"
-                      placeholder="Company Name"
                       name="companyName"
                       value={formData.companyName}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border ${
-                        errors.companyName ? "border-red-500" : "border-gray-700"
-                      } bg-gray-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition`}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                      placeholder="Enter company name"
                     />
                     {errors.companyName && (
                       <p className="mt-1 text-sm text-red-500">{errors.companyName}</p>
                     )}
                   </div>
-                </>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Company Identifier</label>
+                    <input
+                      type="text"
+                      name="companyIdentifier"
+                      value={formData.companyIdentifier}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                      placeholder="Enter company identifier"
+                    />
+                    {errors.companyIdentifier && (
+                      <p className="mt-1 text-sm text-red-500">{errors.companyIdentifier}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Company Type</label>
+                    <div className="relative">
+                      <select
+                        name="companyType"
+                        value={formData.companyType}
+                        onChange={handleChange}
+                        onClick={() => setIsSelectOpen(!isSelectOpen)}
+                        onBlur={() => setIsSelectOpen(false)}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition appearance-none cursor-pointer pr-10"
+                      >
+                        <option value="">Select type</option>
+                        <option value="Private Limited">Private Limited</option>
+                        <option value="Startup">Startup</option>
+                        <option value="Enterprise">Enterprise</option>
+                      </select>
+                      <ChevronDown 
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-transform ${
+                          isSelectOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </div>
+                    {errors.companyType && (
+                      <p className="mt-1 text-sm text-red-500">{errors.companyType}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Industry</label>
+                    <input
+                      type="text"
+                      name="industry"
+                      value={formData.industry}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-700 bg-gray-800 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                      placeholder="Enter industry"
+                    />
+                    {errors.industry && (
+                      <p className="mt-1 text-sm text-red-500">{errors.industry}</p>
+                    )}
+                  </div>
+                </div>
               ) : (
                 <>
                   <div>
@@ -399,8 +476,7 @@ const RegisterForm = ({ formFor }: RegisterFormProps) => {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button className="flex-1 flex items-center justify-center gap-2 py-3 border rounded-lg border-gray-700 bg-gray-800 hover:bg-gray-700 transition-all duration-300 transform hover:scale-[1.02]">
-                  <img src="/images/google-icon.svg" alt="Google logo" className="w-5 h-5" />
-                  <span className="text-sm text-white">Google</span>
+                  <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
                 </button>
                 <button className="flex-1 flex items-center justify-center gap-2 py-3 border rounded-lg border-gray-700 bg-gray-800 hover:bg-gray-700 transition-all duration-300 transform hover:scale-[1.02]">
                   <img src="/images/facebook-icon.svg" alt="Facebook logo" className="w-5 h-5" />
@@ -420,7 +496,7 @@ const RegisterForm = ({ formFor }: RegisterFormProps) => {
       </div>
       <EmailVerificationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} user={formData} userType={formFor} />
     </>
-  );
-};
+  )
+}
 
 export default RegisterForm;

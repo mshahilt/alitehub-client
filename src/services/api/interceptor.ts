@@ -1,7 +1,7 @@
 import { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from "axios";
 import axiosInstance from "./userInstance";
 
-const refreshToken = async (): Promise<string | null> => {
+export const refreshToken = async (): Promise<string | null> => {
     try {
         const response = await axiosInstance.post("/auth/refresh-token", {}, { withCredentials: true });
         return response.data.accessToken;

@@ -2,7 +2,7 @@ import { Camera, Edit2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../app/redux/store';
 import { useEffect } from 'react';
-import { fetchUserProfile } from '../../app/redux/slices/user/userSlice';
+import { fetchUserProfile } from '../../app/redux/slices/user/userAuthSlice';
 import ProfileSkeleton from '../Loading/SkeltonProfileLoading';
 
 interface ProfileComponentProps {
@@ -11,18 +11,16 @@ interface ProfileComponentProps {
 
 const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { data, status, error } = useSelector((state: RootState) => state.userState) as { 
-    data: { name: string, username: string;  }, 
-    status: string, 
-    error: string 
+  const { user, loading } = useSelector((state: RootState) => state.userAuth) as { 
+    user: { name: string, username: string; email: string  }, 
+    loading: boolean,
   };
-
   useEffect(() => {
     dispatch(fetchUserProfile(username));
-    console.log("inside profile component",data)
+    console.log("inside profile component",user)
   }, [dispatch, username]); 
 
-  if (status === 'loading') {
+  if (loading) {
     return <ProfileSkeleton />;
   }
 
@@ -44,8 +42,8 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
       <div className="mt-20 px-8">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold">{data?.name}</h1>
-            <p className="text-gray-400 text-sm">{data?.username}</p>
+            <h1 className="text-2xl font-bold">{user?.name}</h1>
+            <p className="text-gray-400 text-sm">{user?.username}</p>
           </div>
           <div className="flex items-center gap-4">
             <button className="px-4 py-2 bg-gray-800 rounded-lg text-sm">

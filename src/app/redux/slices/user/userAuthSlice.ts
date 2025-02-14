@@ -3,14 +3,14 @@ import { login, register, generateOtp, googleLogin } from "../../../../services/
 import axiosInstance from "../../../../services/api/userInstance";
 import axios from "axios";
 
+export interface User {
+    name: string;
+    username: string;
+    email: string;
+}
+
 export interface UserAuthState {
-    user: {
-        accessToken: string;
-        name: string;
-        username: string;
-        email: string;
-        password: string;
-    };
+    user: User;
     loading: boolean;
     error: string | null;
     isUsernameAvailable: {
@@ -19,35 +19,46 @@ export interface UserAuthState {
     };
 }
 
-
 const initialState: UserAuthState = {
-    user: {
-        name: "",
-        username: "",
-        email: "",
-        password: "",
-        accessToken: ""
-    },
+    user: { name: "", username: "", email: "" },
     loading: false,
     error: null,
-    isUsernameAvailable: {
-        status: null,
-        loading: false
-    },
+    isUsernameAvailable: { status: null, loading: false },
 };
 
 const usernameCheck = createAsyncThunk(
-    "auth/usernameCheck", 
+    "auth/usernameCheck",
     async (username: string, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.get(`/auth/user/checkUsernameAvailability?username=${username}`);
             return response.data; 
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response) {
-                return rejectWithValue(error.response.data);
-            } else {
-                return rejectWithValue(error);
-            }
+            return rejectWithValue(axios.isAxiosError(error) ? error.response?.data : error);
+        }
+    }
+);
+
+export const fetchUserProfile = createAsyncThunk<User, string>(
+    "user/fetchProfile",
+    async (username, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.get(`/${username}`);
+            return response.data.user;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || "Failed to fetch profile");
+        }
+    }
+);
+
+export const getMe = createAsyncThunk<User>(
+    "user/getMe",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.get(`/getMe`);
+            console.log("get me",response.data.user)
+            return response.data.user;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || "Failed to fetch user");
         }
     }
 );
@@ -56,12 +67,16 @@ const userAuthSlice = createSlice({
     name: "auth",
     initialState,
     reducers: {
-        setUserFormData: (state, action: PayloadAction<{ stateType: keyof UserAuthState; name: keyof UserAuthState['user']; value: any }>) => {
+        setUserFormData: (
+            state,
+            action: PayloadAction<{ stateType: keyof UserAuthState; name: keyof User; value: any }>
+        ) => {
             const { stateType, name, value } = action.payload;
             if (stateType === "user") {
                 state.user[name] = value;
             } else if (stateType === "isUsernameAvailable") {
-                state.isUsernameAvailable = value;
+                state.isUsernameAvailable.status = value.status;
+                state.isUsernameAvailable.loading = value.loading;
             } else if (stateType === "loading") {
                 state.loading = value;
             } else if (stateType === "error") {
@@ -70,72 +85,90 @@ const userAuthSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        builder.addCase(login.pending, (state) => {
-            state.loading = true;
-            state.error = null;
-        });
-        builder.addCase(login.fulfilled, (state, action: PayloadAction<UserAuthState['user']>) => {
-            state.loading = false;
-            state.user = action.payload;
-        });
-        builder.addCase(login.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.error.message || "Login failed";
-        });
-        builder.addCase(register.pending, (state) => {
-            state.loading = true;
-            state.error = null;
-        });
-        builder.addCase(register.fulfilled, (state, action: PayloadAction<UserAuthState['user']>) => {
-            state.loading = false;
-            console.log("from builder",action.payload)
-            state.user = action.payload;
-        });
-        builder.addCase(register.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.error.message || "Registration failed";
-        });
-        builder.addCase(usernameCheck.pending, (state) => {
-            state.isUsernameAvailable.loading = true;
-            state.error = null;
-        });
-        builder.addCase(usernameCheck.fulfilled, (state, action) => {
-            state.isUsernameAvailable.loading = false;
-            state.isUsernameAvailable.status = action.payload.data;
-        });
-        builder.addCase(usernameCheck.rejected, (state, action) => {
-            state.isUsernameAvailable.loading = false;
-            state.error = typeof action.payload === 'string' ? action.payload : "Username check failed";
-            state.isUsernameAvailable.status = false; 
-        });
-        builder.addCase(generateOtp.pending, (state) => {
-            state.loading = true;
-            state.error = null;
-        })
-        builder.addCase(generateOtp.fulfilled, (state) => {
-            state.loading = false;
-            state.error = null;
-        })
-        builder.addCase(generateOtp.rejected, (state, action) => {
-            state.loading = true;
-            state.error = typeof action.payload === 'string' ? action.payload : "otp genartion failed";
-        })
-        builder.addCase(googleLogin.pending, (state) => {
-            state.loading = true;
-            state.error = null;
-        });
-        builder.addCase(googleLogin.fulfilled, (state, action: PayloadAction<UserAuthState['user']>) => {
-            state.loading = false;
-            console.log("inside add case of google login full filled", action.payload)
-            localStorage.setItem('token', action.payload.accessToken)
-            state.user = action.payload;
-        });
-        builder.addCase(googleLogin.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.error.message || "Google login failed";
-        });
-
-    }
+        builder
+            .addCase(login.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(login.fulfilled, (state, action: PayloadAction<User>) => {
+                state.loading = false;
+                state.user = action.payload;
+            })
+            .addCase(login.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || "Login failed";
+            })
+            .addCase(register.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(register.fulfilled, (state, action: PayloadAction<User>) => {
+                getMe()
+                state.loading = false;
+                state.user = action.payload;
+            })
+            .addCase(register.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || "Registration failed";
+            })
+            .addCase(usernameCheck.pending, (state) => {
+                state.isUsernameAvailable.loading = true;
+                state.error = null;
+            })
+            .addCase(usernameCheck.fulfilled, (state, action) => {
+                state.isUsernameAvailable.loading = false;
+                state.isUsernameAvailable.status = action.payload.data;
+            })
+            .addCase(usernameCheck.rejected, (state, action) => {
+                state.isUsernameAvailable.loading = false;
+                state.error = typeof action.payload === "string" ? action.payload : "Username check failed";
+                state.isUsernameAvailable.status = false;
+            })
+            .addCase(generateOtp.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(generateOtp.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(generateOtp.rejected, (state, action) => {
+                state.loading = false; 
+                state.error = typeof action.payload === "string" ? action.payload : "OTP generation failed";
+            })
+            .addCase(googleLogin.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(googleLogin.fulfilled, (state, action: PayloadAction<User>) => {
+                state.loading = false;
+                state.user = action.payload;
+            })
+            .addCase(googleLogin.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || "Google login failed";
+            })
+            .addCase(fetchUserProfile.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<User>) => {
+                state.loading = false;
+                state.user = action.payload;
+            })
+            .addCase(fetchUserProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            .addCase(getMe.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(getMe.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload;
+            })
+            .addCase(getMe.rejected, (state) => {
+                state.loading = false;
+            })
+    },
 });
 
 export const { setUserFormData } = userAuthSlice.actions;
