@@ -10,7 +10,6 @@ interface CompanyProfileProps {
 }
 
 const CompanyProfile: React.FC<CompanyProfileProps> = ({ companyIdentifier }) => {
-  console.log("companyIdentifier", companyIdentifier)
   const dispatch: AppDispatch = useDispatch();
   const { company, loading } = useSelector((state: RootState) => state.companyAuth) as {
     company: {

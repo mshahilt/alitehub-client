@@ -9,11 +9,12 @@ type TableProps<T> = {
   columns: Column<T>[];
   data: T[];
   actions?: (row: T) => JSX.Element;
+  bgColor?: string;
 };
 
-const GenericTable = <T,>({ columns, data, actions }: TableProps<T>) => {
+const GenericTable = <T,>({ columns, data, actions, bgColor }: TableProps<T>) => {
   return (
-    <div className="w-full p-4 bg-black min-h-screen">
+    <div className={`w-full p-4 ${bgColor || 'bg-primary'} min-h-screen`}>
       <div className="max-w-[90rem] mx-auto">
         <div className="relative overflow-hidden rounded-xl bg-gray-900 shadow-md">
           <div className="overflow-x-auto">

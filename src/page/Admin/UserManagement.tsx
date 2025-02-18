@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import GenericTable from "../../components/admin/Table";
+import GenericTable from "../../components/Table/Table";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import adminMenuItems from "../../app/data/adminSidebarItems";
 import adminAxiosInstance from "../../services/api/adminInstance";
@@ -59,7 +59,7 @@ const UserManagement = () => {
     ];
 
     return (
-        <div className="flex bg-black min-h-screen">
+        <div className="flex bg-primary min-h-screen">
             <Sidebar 
                 menuItems={adminMenuItems} 
                 isExpanded={isExpanded} 

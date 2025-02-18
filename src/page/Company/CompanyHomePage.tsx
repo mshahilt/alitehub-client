@@ -30,25 +30,21 @@ const CompanyHomePage = () => {
   }, []);
 
   return (
+    <>
     <div className="flex bg-primary min-h-screen">
-      <div className="fixed left-0 w-1/4 h-screen md:block z-3">
         <Sidebar
           menuItems={companySidebarItems}
           isExpanded={isExpanded}
           setIsExpanded={setIsExpanded}
         />
-      </div>
 
-      <div className="fixed right-0 w-1/4 h-screen bg-primary border-l border-gray-800 lg:block hidden">
-        <div className="p-4 text-gray-400">Right Area</div>
-      </div>
-
-      <div className="flex-1 min-h-screen ml-auto md:ml-1/4 mr-0 md:mr-1/4 flex justify-center p-1 z-2">
-        <div className="w-full max-w-2xl">
+      <div className="flex-1 bg-primary min-h-screen flex justify-center p-1">
+        <div className="w-full bg-primary max-w-6xl">
           <PostCard />
         </div>
       </div>
     </div>
+    </>
   );
 };
 

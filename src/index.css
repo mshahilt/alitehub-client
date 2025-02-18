@@ -1,85 +1,191 @@
 body{
-    background-color: #240750;
+  background-color: #240750;
 }
 
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
 .Toastify__toast-container {
-  padding: 12px;
-  z-index: 9999;
-  width: 320px;
+padding: 12px;
+z-index: 9999;
+width: 320px;
 }
 
 .Toastify__toast {
-  background-color: rgba(20, 20, 20, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  
-  padding: 14px 18px;
-  margin-bottom: 12px;
-  min-height: 64px;
-  
-  font-size: 14px;
-  line-height: 1.5;
-  letter-spacing: 0.2px;
-  
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-  
-  transition: all 0.2s ease;
+background-color: rgba(20, 20, 20, 0.75);
+border: 1px solid rgba(255, 255, 255, 0.1);
+border-radius: 12px;
+
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+
+padding: 14px 18px;
+margin-bottom: 12px;
+min-height: 64px;
+
+font-size: 14px;
+line-height: 1.5;
+letter-spacing: 0.2px;
+
+box-shadow: 
+  0 4px 6px -1px rgba(0, 0, 0, 0.1),
+  0 2px 4px -1px rgba(0, 0, 0, 0.06),
+  0 0 0 1px rgba(255, 255, 255, 0.05);
+
+transition: all 0.2s ease;
 }
 
 .Toastify__toast:hover {
-  transform: translateY(-1px);
-  box-shadow: 
-    0 6px 8px -1px rgba(0, 0, 0, 0.12),
-    0 3px 6px -1px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+transform: translateY(-1px);
+box-shadow: 
+  0 6px 8px -1px rgba(0, 0, 0, 0.12),
+  0 3px 6px -1px rgba(0, 0, 0, 0.08),
+  0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .Toastify__close-button {
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
+opacity: 0.6;
+transition: opacity 0.2s ease;
 }
 
 .Toastify__close-button:hover {
-  opacity: 1;
+opacity: 1;
 }
 
 .Toastify__progress-bar {
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0.4)
-  );
-  height: 3px;
-  bottom: 0;
-  border-radius: 0 0 12px 12px;
+background: linear-gradient(
+  to right,
+  rgba(255, 255, 255, 0.2),
+  rgba(255, 255, 255, 0.4)
+);
+height: 3px;
+bottom: 0;
+border-radius: 0 0 12px 12px;
 }
 
 .Toastify__toast--success {
-  border-left: 4px solid #10B981;
+border-left: 4px solid #10B981;
 }
 
 .Toastify__toast--error {
-  border-left: 4px solid #EF4444;
+border-left: 4px solid #EF4444;
 }
 
 .Toastify__toast--warning {
-  border-left: 4px solid #F59E0B;
+border-left: 4px solid #F59E0B;
 }
 
 .Toastify__toast--info {
-  border-left: 4px solid #3B82F6;
+border-left: 4px solid #3B82F6;
 }
-
 
 @import "tailwindcss";
 @theme {
-  --color-primary: #240750;
-  --color-secondary: #12012C;
+--color-primary: #240750;
+--color-secondary: #12012C;
 }
 
+@source "../node_modules/compo";
+:root {
+  --background: hsl(0 0% 98%);
+  --foreground: hsl(224 71.4% 5%);
+  --card: hsl(0 0% 96%);
+  --card-foreground: hsl(224 71.4% 10%);
+  --popover: hsl(0 0% 98%);
+  --popover-foreground: hsl(224 71.4% 5%);
+  --primary:#240750;
+  --primary-foreground: hsl(220 20% 95%);
+  --secondary:#12012C;
+  --secondary-foreground: hsl(220.9 39.3% 15%);
+  --muted: hsl(220 10% 92%);
+  --muted-foreground: hsl(220 8.9% 40%);
+  --accent: hsl(220 10% 92%);
+  --accent-foreground: hsl(220.9 39.3% 15%);
+  --destructive: hsl(0 72% 55%);
+  --destructive-foreground: hsl(210 20% 98%);
+  --border: hsl(220 10% 85%);
+  --input: hsl(220 10% 85%);
+  --ring: hsl(224 71.4% 5%);
+  --chart-1: hsl(12 78% 60%);
+  --chart-2: hsl(170 55% 42%);
+  --chart-3: hsl(200 40% 30%);
+  --chart-4: hsl(42 72% 65%);
+  --chart-5: hsl(25 85% 64%);
+  --radius: 0.6rem;
+}
+
+.dark {
+  --background: hsl(224 71.4% 6%);
+  --foreground: hsl(210 20% 95%);
+  --card: hsl(224 71.4% 8%);
+  --card-foreground: hsl(210 20% 98%);
+  --popover: hsl(224 71.4% 6%);
+  --popover-foreground: hsl(210 20% 98%);
+  --primary: #240750;
+  --primary-foreground: hsl(220.9 39.3% 12%);
+  --secondary: #12012C;
+  --secondary-foreground: hsl(210 20% 98%);
+  --muted: hsl(215 30% 18%);
+  --muted-foreground: hsl(217.9 12% 65%);
+  --accent: hsl(215 30% 18%);
+  --accent-foreground: hsl(210 20% 98%);
+  --destructive: hsl(0 60% 32%);
+  --destructive-foreground: hsl(210 20% 98%);
+  --border: hsl(215 30% 18%);
+  --input: hsl(215 30% 18%);
+  --ring: hsl(216 12% 82%);
+  --chart-1: hsl(220 70% 52%);
+  --chart-2: hsl(160 58% 45%);
+  --chart-3: hsl(30 80% 58%);
+  --chart-4: hsl(280 67% 62%);
+  --chart-5: hsl(340 75% 58%);
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+* {
+  @apply border-border outline-ring/50;
+  }
+body {
+  @apply bg-background text-foreground;
+  }
+}
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+      display: none;
+  }
+  .no-scrollbar {
+      -ms-overflow-style: none; 
+      scrollbar-width: none;  
+}
+}

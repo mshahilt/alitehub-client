@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import adminAxiosInstance from "../../services/api/adminInstance";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import adminMenuItems from "../../app/data/adminSidebarItems";
-import Table from "../../components/admin/Table";
+import GenericTable from "../../components/Table/Table";
 import { useNavigate } from "react-router-dom";
 
 const CompanyManagement = () => {
@@ -67,11 +67,11 @@ const CompanyManagement = () => {
                 menuItems={adminMenuItems} 
                 isExpanded={isExpanded} 
                 setIsExpanded={setIsExpanded} 
-                bgColor="black" 
+                bgColor="bg-black" 
             />
             <div className="flex-1 bg-black min-h-screen flex justify-center p-4 z-2">
                 <div className="w-full bg-black max-w-6xl">
-                    <Table columns={columns} data={companies} />
+                    <GenericTable columns={columns} data={companies} bgColor="bg-black"/>
                 </div>
             </div>
         </div>

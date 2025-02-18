@@ -4,27 +4,64 @@ import axiosInstance from "../../../../services/api/userInstance";
 import axios from "axios";
 
 export interface User {
+
     name: string;
     username: string;
     email: string;
+    contact: {
+        phone: string | null;
+      };
+      profile_picture: string | null;
+      job_types: string[];
+      industries: string[];
+      skills: string[];
+      education: Array<{
+        institution: string;
+        degree: string;
+        field: string;
+        start_date: string;
+        end_date: string;
+      }>;
+      experience: Array<{
+        company: string;
+        title: string;
+        start_date: string;
+        end_date: string;
+        description: string;
+      }>;
 }
 
 export interface UserAuthState {
     user: User;
     loading: boolean;
     error: string | null;
+    ownAccount: boolean;
     isUsernameAvailable: {
         status: boolean | null;
         loading: boolean;
     };
 }
-
 const initialState: UserAuthState = {
-    user: { name: "", username: "", email: "" },
+    user: {
+      name: "",
+      username: "",
+      email: "",
+      contact: {
+        phone: null,
+      },
+      profile_picture: null,
+      job_types: [],
+      industries: [],
+      skills: [],
+      education: [],
+      experience: [],
+    },
+    ownAccount: false,
     loading: false,
     error: null,
     isUsernameAvailable: { status: null, loading: false },
-};
+  };
+  
 
 const usernameCheck = createAsyncThunk(
     "auth/usernameCheck",
@@ -43,7 +80,7 @@ export const fetchUserProfile = createAsyncThunk<User, string>(
     async (username, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.get(`/${username}`);
-            return response.data.user;
+            return response.data;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || "Failed to fetch profile");
         }
@@ -150,9 +187,11 @@ const userAuthSlice = createSlice({
             .addCase(fetchUserProfile.pending, (state) => {
                 state.loading = true;
             })
-            .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<User>) => {
+            .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<UserAuthState>) => {
                 state.loading = false;
-                state.user = action.payload;
+                state.user = action.payload.user;
+                console.log('helllo world',action.payload.ownAccount)
+                state.ownAccount = action.payload.ownAccount;
             })
             .addCase(fetchUserProfile.rejected, (state, action) => {
                 state.loading = false;

@@ -15,6 +15,9 @@ import UserManagement from "./page/Admin/UserManagement";
 import ForgetPassword from "./page/User/ForgetPassword";
 import AdminLogin from "./page/Admin/AdminLogin"
 import CompanyManagement from "./page/Admin/CompanyManagement";
+import CompanyAddNewJobPage from "./page/Company/CompanyAddNewJobPage";
+import JobManagement from "./page/Company/JobManagement";
+import Jobs from "./page/User/Jobs";
 const App = () => {
   return (
     <>
@@ -28,14 +31,19 @@ const App = () => {
           <Route path="/forgot-password" element={<ProtectedAuthRoute element={<ForgetPassword />} />} />
           <Route path="/admin/login" element={<ProtectedAuthRoute element={<AdminLogin />}/>} />
 
+          <Route path="/jobs" element={<ProtectedRoute element={<Jobs />} requiredRole="user" />} />
+
           <Route path="/" element={<ProtectedRoute element={<Home />} requiredRole="user" />} />
           <Route path="/company" element={<ProtectedRoute element={<CompanyHomePage />} requiredRole="company" />} />
+          <Route path="/company/jobs/add" element={<ProtectedRoute element={<CompanyAddNewJobPage />} requiredRole="company" />} />
+          <Route path="/company/jobs" element={<ProtectedRoute element={<JobManagement />} requiredRole="company" />} />
           <Route path="/:username" element={<ProtectedRoute element={<Profile />} requiredRole="user" />} />
           <Route path="/company/:companyIdentifier" element={<ProtectedRoute element={<CompanyProfilePage />} requiredRole="company" />} />
 
           <Route path="/admin/users"  element={<UserManagement/>}/>
           <Route path="/admin/companies"  element={<CompanyManagement/>}/>
         </Routes>
+
       </BrowserRouter>
     </>
   );

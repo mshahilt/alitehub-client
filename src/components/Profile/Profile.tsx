@@ -1,9 +1,11 @@
 import { Camera, Edit2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../app/redux/store';
-import { useEffect } from 'react';
-import { fetchUserProfile } from '../../app/redux/slices/user/userAuthSlice';
+import { useEffect, useState } from 'react';
+import { fetchUserProfile, User } from '../../app/redux/slices/user/userAuthSlice';
 import ProfileSkeleton from '../Loading/SkeltonProfileLoading';
+import EditProfile from './EditeProfile';
+import axiosInstance from '@/services/api/userInstance';
 
 interface ProfileComponentProps {
   username: string;
@@ -11,15 +13,20 @@ interface ProfileComponentProps {
 
 const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { user, loading } = useSelector((state: RootState) => state.userAuth) as { 
-    user: { name: string, username: string; email: string  }, 
-    loading: boolean,
-  };
+  const { user, loading, ownAccount } = useSelector((state: RootState) => state.userAuth);
+  
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleSave = async (user: User) => {
+    const response = await axiosInstance.post('/updateProfile', user)
+    console.log(response);
+  }
+  
   useEffect(() => {
     dispatch(fetchUserProfile(username));
-    console.log("inside profile component",user)
-  }, [dispatch, username]); 
-
+  }, [dispatch, username]);
+  
   if (loading) {
     return <ProfileSkeleton />;
   }
@@ -49,9 +56,15 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
             <button className="px-4 py-2 bg-gray-800 rounded-lg text-sm">
               Brototype
             </button>
-            <button className="p-2 bg-gray-800 rounded-lg">
+            {ownAccount && <>
+              <button
+              className="p-2 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-500" 
+              onClick={() => setIsEditModalOpen(true)}
+            >
               <Edit2 size={20} />
             </button>
+            </>}
+            
           </div>
         </div>
 
@@ -99,6 +112,13 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
           </button>
         </div>
       </div>
+
+      <EditProfile 
+        onClose={() => setIsEditModalOpen(false)} 
+        isOpen={isEditModalOpen} 
+        user={user} 
+        onSave={handleSave}
+      />
     </div>
   );  
 };

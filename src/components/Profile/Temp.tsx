@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Upload, User, Briefcase, GraduationCap, Award } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,145 +8,48 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
 interface UserProfile {
-  name: string;
-  username: string;
-  email: string;
+  name: string | null;
+  username: string | null;
+  email: string | null;
   contact: {
-    phone: string | null; 
+    phone: string | null;
   };
   profile_picture: string | null;
   job_types: string[];
   industries: string[];
   skills: string[];
   education: Array<{
-    institution: string;
-    degree: string;
-    field: string;
-    start_date: string;
-    end_date: string;
+    institution: string | null;
+    degree: string | null;
+    field: string | null;
+    startYear: string | null;
+    endYear: string | null;
   }>;
   experience: Array<{
-    company: string;
-    title: string;
-    start_date: string;
-    end_date: string;
-    description: string;
+    company: string | null;
+    position: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    description: string | null;
   }>;
 }
-
-const DEFAULT_EDUCATION = {
-  institution: '',
-  degree: '',
-  field: '',
-  start_date: '',
-  end_date: ''
-};
-
-const DEFAULT_EXPERIENCE = {
-  company: '',
-  title:'',
-  position: '',
-  start_date: '',
-  end_date: '',
-  description: ''
-};
-
-const INITIAL_STATE: UserProfile = {
-  name: '',
-  username: '',
-  email: '',
-  contact: { phone: '' },
-  profile_picture: '',
-  job_types: [],
-  industries: [],
-  skills: [],
-  education: [],
-  experience: []
-};
 
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: Partial<UserProfile>;
+  user: UserProfile;
   onSave: (userData: UserProfile) => Promise<void>;
 }
 
 const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
-  const [userData, setUserData] = useState<UserProfile>(() => {
-    return {
-      ...INITIAL_STATE,
-      ...user,
-      contact: { ...INITIAL_STATE.contact, ...user?.contact },
-      job_types: user?.job_types || [],
-      industries: user?.industries || [],
-      skills: user?.skills || [],
-      education: user?.education || [],
-      experience: user?.experience || []
-    };
-  });
-  
+  const [userData, setUserData] = useState<UserProfile>(user);
   const [isSaving, setIsSaving] = useState(false);
   const [newSkill, setNewSkill] = useState("");
-  const [errors, setErrors] = useState<Partial<Record<keyof UserProfile, string>>>({});
-  const [activeTab, setActiveTab] = useState("basic");
-
-  useEffect(() => {
-    if (user) {
-      setUserData(prevData => ({
-        ...prevData,
-        ...user,
-        contact: { ...prevData.contact, ...user.contact },
-        job_types: user.job_types || prevData.job_types,
-        industries: user.industries || prevData.industries,
-        skills: user.skills || prevData.skills,
-        education: user.education || prevData.education,
-        experience: user.experience || prevData.experience
-      }));
-    }
-  }, [user]);
-
-  if (!isOpen) return null;
-
-  const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof UserProfile, string>> = {};
-
-    if (!userData.email?.trim()) newErrors.email = 'Email is required';
-    if (!userData.username?.trim()) newErrors.username = 'Username is required';
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (userData.email && !emailRegex.test(userData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-
-    const phoneRegex = /^\+?[\d\s-]{10,}$/;
-    if (userData.contact.phone && !phoneRegex.test(userData.contact.phone)) {
-      newErrors.contact = 'Invalid phone format';
-    }
-
-    const eduErrors = userData.education.some(edu => 
-      !edu.institution?.trim() || !edu.degree?.trim() || !edu.field?.trim()
-    );
-    if (eduErrors) {
-      newErrors.education = 'All education fields are required';
-    }
-
-    const expErrors = userData.experience.some(exp => 
-      !exp.company?.trim() || !exp.title?.trim() || !exp.description?.trim()
-    );
-    if (expErrors) {
-      newErrors.experience = 'All experience fields are required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleInputChange = (field: keyof UserProfile, value: any) => {
     setUserData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
   };
 
   const handleContactChange = (value: string) => {
@@ -154,17 +57,13 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
       ...prev,
       contact: { ...prev.contact, phone: value }
     }));
-    if (errors.contact) {
-      setErrors(prev => ({ ...prev, contact: undefined }));
-    }
   };
 
   const addToArray = (field: 'skills' | 'job_types' | 'industries', value: string) => {
-    const trimmedValue = value.trim();
-    if (trimmedValue && !userData[field].includes(trimmedValue)) {
+    if (value.trim() && !userData[field].includes(value.trim())) {
       setUserData(prev => ({
         ...prev,
-        [field]: [...prev[field], trimmedValue]
+        [field]: [...prev[field], value.trim()]
       }));
     }
   };
@@ -179,51 +78,30 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
   const addEducation = () => {
     setUserData(prev => ({
       ...prev,
-      education: [...prev.education, { ...DEFAULT_EDUCATION }]
+      education: [
+        ...prev.education,
+        { institution: null, degree: null, field: null, startYear: null, endYear: null }
+      ]
     }));
   };
 
   const addExperience = () => {
     setUserData(prev => ({
       ...prev,
-      experience: [...prev.experience, { ...DEFAULT_EXPERIENCE }]
+      experience: [
+        ...prev.experience,
+        { company: null, position: null, startDate: null, endDate: null, description: null }
+      ]
     }));
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        handleInputChange('profile_picture', reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleSave = async () => {
-    console.log('save clicked')
-    if (!validateForm()) {
-      console.log('form validation failed')
-      const errorFields = Object.keys(errors);
-      if (errorFields.includes('email') || errorFields.includes('username')) {
-        setActiveTab('basic');
-      } else if (errorFields.includes('education')) {
-        setActiveTab('education');
-      } else if (errorFields.includes('experience')) {
-        setActiveTab('experience');
-      }
-      return;
-    }
-
     try {
       setIsSaving(true);
-      console.log("nammal jaychu",userData)
       await onSave(userData);
       onClose();
     } catch (error) {
       console.error('Failed to save:', error);
-      setErrors(prev => ({ ...prev, submit: 'Failed to save profile' }));
     } finally {
       setIsSaving(false);
     }
@@ -231,13 +109,13 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-screen h-screen bg-primary text-white overflow-y-auto flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full relative">
-          <TabsList className="grid w-full grid-cols-4 bg-secondary top-0 sticky">
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <User className="w-4 h-4" /> Basic
             </TabsTrigger>
@@ -255,75 +133,48 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
           <TabsContent value="basic" className="space-y-4">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <Avatar className="w-32 h-32 c">
-                <AvatarImage src={userData?.profile_picture || undefined}/>
+                <Avatar className="w-32 h-32">
+                  <AvatarImage src={userData.profile_picture || ""} />
                   <AvatarFallback>
-                    <User color='grey' className="w-12 h-12" />
+                    <User className="w-12 h-12" />
                   </AvatarFallback>
                 </Avatar>
-                <label htmlFor="profile-picture" className="absolute bottom-0 right-0">
-                  <input
-                    type="file"
-                    id="profile-picture"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                  />
-                  <Button size="icon" className="rounded-full">
-                    <Upload className="w-4 h-4" />
-                  </Button>
-                </label>
+                <Button size="icon" className="absolute bottom-0 right-0 rounded-full">
+                  <Upload className="w-4 h-4" />
+                </Button>
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Input
-                  placeholder="Username"
-                  value={userData.username}
-                  onChange={(e) => handleInputChange("username", e.target.value)}
-                  className={errors.username ? "border-red-500" : ""}
-                />
-                {errors.username && (
-                  <p className="text-sm text-red-500">{errors.username}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Input
-                  type="email"
-                  placeholder="Email"
-                  value={userData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={errors.email ? "border-red-500" : ""}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Input
-                  type="tel"
-                  placeholder="Phone"
-                  value={userData?.contact?.phone || undefined}
-                  onChange={(e) => handleContactChange(e.target.value)}
-                  className={errors.contact ? "border-red-500" : ""}
-                />
-                {errors.contact && (
-                  <p className="text-sm text-red-500">{errors.contact}</p>
-                )}
-              </div>
+              <Input
+                placeholder="Username"
+                value={userData.username || ""}
+                onChange={(e) => handleInputChange("username", e.target.value)}
+              />
+              <Input
+                type="email"
+                placeholder="Email"
+                value={userData.email || ""}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+              />
+              <Input
+                type="tel"
+                placeholder="Phone"
+                value={userData.contact.phone || ""}
+                onChange={(e) => handleContactChange(e.target.value)}
+              />
             </div>
           </TabsContent>
 
-          <TabsContent value="skills" className="space-y-6 ">
+          <TabsContent value="skills" className="space-y-6">
             {["skills", "job_types", "industries"].map((field) => (
-              <Card key={field} className='bg-secondary rounded-2xl text-white'>
+              <Card key={field}>
                 <CardContent className="pt-6">
                   <h3 className="text-lg font-semibold mb-4 capitalize">
                     {field.replace("_", " ")}
                   </h3>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {userData[field as keyof Pick<UserProfile, 'skills' | 'job_types' | 'industries'>].map((item, index) => (
-                      <Badge key={index} variant="secondary" className="gap-1 bg-gray-300 hover:bg-gray-500">
+                      <Badge key={index} variant="secondary" className="gap-1">
                         {item}
                         <Button
                           variant="ghost"
@@ -331,7 +182,7 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
                           className="h-4 w-4 p-0 hover:bg-transparent"
                           onClick={() => removeFromArray(field as 'skills' | 'job_types' | 'industries', index)}
                         >
-                          <X className=" h-3 w-3" />
+                          <X className="h-3 w-3" />
                         </Button>
                       </Badge>
                     ))}
@@ -349,7 +200,6 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
                       }}
                     />
                     <Button
-                    className='cursor-pointer'
                       onClick={() => {
                         if (newSkill) {
                           addToArray(field as 'skills' | 'job_types' | 'industries', newSkill);
@@ -366,11 +216,8 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
           </TabsContent>
 
           <TabsContent value="education" className="space-y-4">
-          {errors.education && (
-              <p className="text-sm text-red-500 mb-2">{errors.education}</p>
-            )}
-            {userData.education?.map((edu, index) => (
-              <Card key={index} className='bg-secondary text-white'>
+            {userData.education.map((edu, index) => (
+              <Card key={index}>
                 <CardContent className="pt-6 space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <Input
@@ -403,19 +250,19 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
                     <div className="grid grid-cols-2 gap-4">
                       <Input
                         placeholder="Start Year"
-                        value={edu.start_date || ""}
+                        value={edu.startYear || ""}
                         onChange={(e) => {
                           const newEducation = [...userData.education];
-                          newEducation[index] = { ...edu, start_date: e.target.value };
+                          newEducation[index] = { ...edu, startYear: e.target.value };
                           handleInputChange("education", newEducation);
                         }}
                       />
                       <Input
                         placeholder="End Year"
-                        value={edu.end_date || ""}
+                        value={edu.endYear || ""}
                         onChange={(e) => {
                           const newEducation = [...userData.education];
-                          newEducation[index] = { ...edu, end_date: e.target.value };
+                          newEducation[index] = { ...edu, endYear: e.target.value };
                           handleInputChange("education", newEducation);
                         }}
                       />
@@ -433,12 +280,12 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
                 </CardContent>
               </Card>
             ))}
-            <Button variant="outline" className='bg-secondary' onClick={addEducation}>Add Education</Button>
+            <Button variant="outline" onClick={addEducation}>Add Education</Button>
           </TabsContent>
 
           <TabsContent value="experience" className="space-y-4">
-            {userData.experience?.map((exp, index) => (
-              <Card key={index} className='bg-secondary text-white'>
+            {userData.experience.map((exp, index) => (
+              <Card key={index}>
                 <CardContent className="pt-6 space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <Input
@@ -452,10 +299,10 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
                     />
                     <Input
                       placeholder="Position"
-                      value={exp.title || ""}
+                      value={exp.position || ""}
                       onChange={(e) => {
                         const newExperience = [...userData.experience];
-                        newExperience[index] = { ...exp, title: e.target.value };
+                        newExperience[index] = { ...exp, position: e.target.value };
                         handleInputChange("experience", newExperience);
                       }}
                     />
@@ -463,19 +310,19 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
                   <div className="grid grid-cols-2 gap-4">
                     <Input
                       placeholder="Start Date"
-                      value={exp.start_date || ""}
+                      value={exp.startDate || ""}
                       onChange={(e) => {
                         const newExperience = [...userData.experience];
-                        newExperience[index] = { ...exp, start_date: e.target.value };
+                        newExperience[index] = { ...exp, startDate: e.target.value };
                         handleInputChange("experience", newExperience);
                       }}
                     />
                     <Input
                       placeholder="End Date"
-                      value={exp.end_date || ""}
+                      value={exp.endDate || ""}
                       onChange={(e) => {
                         const newExperience = [...userData.experience];
-                        newExperience[index] = { ...exp, end_date: e.target.value };
+                        newExperience[index] = { ...exp, endDate: e.target.value };
                         handleInputChange("experience", newExperience);
                       }}
                     />
@@ -501,13 +348,13 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
                 </CardContent>
               </Card>
             ))}
-            <Button variant="outline" className='bg-secondary' onClick={addExperience}>Add Experience</Button>
+            <Button variant="outline" onClick={addExperience}>Add Experience</Button>
           </TabsContent>
         </Tabs>
 
         <div className="flex justify-end gap-2 mt-6">
-          <Button variant="outline" className='bg-secondary' onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={isSaving} className='bg-black border border-white cursor-pointer'>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </div>

@@ -2,6 +2,8 @@ import React, { ReactElement } from "react";
 import { Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { refreshToken } from "../../services/api/interceptor";
+import LoadingScreen from "../Loading/Loading";
+
 
 interface ProtectedRouteProps {
   element: ReactElement;
@@ -54,7 +56,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, requiredRole }
   }, [requiredRole]);
 
   if (isAuthorized === null) {
-    return <div>Loading...</div>;
+    return <LoadingScreen/>;
   }
 
   if (!isAuthorized) {
