@@ -18,6 +18,7 @@ export interface Company {
 
 export interface CompanyAuthState {
   company: Company | null;
+  ownAcc: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -35,6 +36,7 @@ const initialState: CompanyAuthState = {
     profile_picture:null,
     locations: null
   },
+  ownAcc: false,
   loading: false,
   error: null
 };
@@ -44,7 +46,7 @@ export const fetchCompanyProfile = createAsyncThunk(
   async (companyIdentifier: string, { rejectWithValue }) => {
     try {
       const response = await axiosInstance(`/company/${companyIdentifier}`);
-      return response.data.user;
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         return rejectWithValue(error.response?.data?.message || "Failed to fetch company profile");
@@ -66,6 +68,37 @@ export const getCompany = createAsyncThunk<Company>(
     }
   }
 );
+
+export const updateCompanyProfilePicture = createAsyncThunk(
+  'company/updateProfilePicture',
+  async (imageFile: File, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      console.log("imageFile", imageFile);
+      formData.append('profileImage', imageFile);
+
+      console.log("formData", formData);
+
+      const response = await axiosInstance.post('/company/uploadProfileImage', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log("upload profile", response);
+
+      if (!response) {
+        throw new Error('Failed to upload image');
+      }
+
+      return response.data; 
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+
 
 const companyAuthSlice = createSlice({
   name: "companyAuth",
@@ -139,7 +172,8 @@ const companyAuthSlice = createSlice({
           })
     builder.addCase(fetchCompanyProfile.fulfilled, (state, action) => {
             state.loading = false;
-            state.company = action.payload;
+            state.company = action.payload.user;
+            state.ownAcc = action.payload.ownUserAcc
             state.error = null;
           })
     builder.addCase(fetchCompanyProfile.rejected, (state, action) => {
