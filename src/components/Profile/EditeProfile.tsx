@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, User, Briefcase, GraduationCap, Award } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X, Upload, User, Briefcase, GraduationCap, Award, FileText, Loader2, BookCheck } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import axiosInstance from '@/services/api/userInstance';
 interface UserProfile {
   name: string;
   username: string;
@@ -16,6 +17,8 @@ interface UserProfile {
     phone: string | null; 
   };
   profile_picture: string | null;
+  resume_url: string | null;
+  video_url: string | null;
   job_types: string[];
   industries: string[];
   skills: string[];
@@ -58,6 +61,8 @@ const INITIAL_STATE: UserProfile = {
   email: '',
   contact: { phone: '' },
   profile_picture: '',
+  resume_url: "",
+  video_url: "",
   job_types: [],
   industries: [],
   skills: [],
@@ -70,6 +75,10 @@ interface ProfileModalProps {
   onClose: () => void;
   user: Partial<UserProfile>;
   onSave: (userData: UserProfile) => Promise<void>;
+}
+interface ResumeFile {
+  file: File;
+  preview?: string;
 }
 
 const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
@@ -85,7 +94,11 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
       experience: user?.experience || []
     };
   });
-  
+  const [selectedResume, setSelectedResume] = useState<ResumeFile | null>(null);
+  const [resumeDialog, setResumeDialog] = useState({
+    isOpen: false,
+    isUploading: false
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [newSkill, setNewSkill] = useState("");
   const [errors, setErrors] = useState<Partial<Record<keyof UserProfile, string>>>({});
@@ -201,6 +214,54 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
     }
   };
 
+  const handleResumeSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    
+    if (!file) return;
+    
+    if (file.type !== "application/pdf") {
+      alert("Only PDF files are allowed.");
+      return;
+    }
+
+    // Create preview URL for PDF
+    const previewUrl = URL.createObjectURL(file);
+    
+    setSelectedResume({
+      file,
+      preview: previewUrl
+    });
+    setResumeDialog({ ...resumeDialog, isOpen: true });
+  };
+
+  const handleResumeUpload = async () => {
+    if (!selectedResume?.file) return;
+
+    setResumeDialog(prev => ({ ...prev, isUploading: true }));
+    
+    const formData = new FormData();
+    formData.append("pdf", selectedResume.file);
+
+    try {
+      const response = await axiosInstance.post(
+        "uploadResume",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      URL.revokeObjectURL(selectedResume.preview || '');
+      setSelectedResume(null);
+      setResumeDialog({ isOpen: false, isUploading: false });
+      
+      alert("Resume uploaded successfully!");
+      console.log("File URL:", response.data.fileUrl);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      setResumeDialog(prev => ({ ...prev, isUploading: false }));
+      alert("Failed to upload resume.");
+    }
+  };
+
   const handleSave = async () => {
     console.log('save clicked')
     if (!validateForm()) {
@@ -252,67 +313,183 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="basic" className="space-y-4">
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <Avatar className="w-32 h-32 c">
-                <AvatarImage src={userData?.profile_picture || undefined}/>
-                  <AvatarFallback>
-                    <User color='grey' className="w-12 h-12" />
-                  </AvatarFallback>
-                </Avatar>
-                <label htmlFor="profile-picture" className="absolute bottom-0 right-0">
-                  <input
-                    type="file"
-                    id="profile-picture"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                  />
-                  <Button size="icon" className="rounded-full">
-                    <Upload className="w-4 h-4" />
-                  </Button>
-                </label>
+          <TabsContent value="basic" className="space-y-6">
+      <div className="flex justify-center">
+        <div className="relative">
+          <Avatar className="w-32 h-32">
+            <AvatarImage src={userData?.profile_picture ?? ""} />
+            <AvatarFallback>
+              <User className="w-12 h-12 text-gray-400" />
+            </AvatarFallback>
+          </Avatar>
+          <label htmlFor="profile-picture" className="absolute -bottom-2 -right-2">
+            <input
+              type="file"
+              id="profile-picture"
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+            <Button size="icon" variant="secondary" className="rounded-full shadow-lg">
+              <Upload className="w-4 h-4" />
+            </Button>
+          </label>
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Input
+            placeholder="Username"
+            value={userData.username}
+            onChange={(e) => handleInputChange("username", e.target.value)}
+            className={errors.username ? "border-red-500" : ""}
+          />
+          {errors.username && (
+            <p className="text-sm text-red-500">{errors.username}</p>
+          )}
+        </div>
+        
+        <div className="space-y-2">
+          <Input
+            type="email"
+            placeholder="Email"
+            value={userData.email}
+            onChange={(e) => handleInputChange("email", e.target.value)}
+            className={errors.email ? "border-red-500" : ""}
+          />
+          {errors.email && (
+            <p className="text-sm text-red-500">{errors.email}</p>
+          )}
+        </div>
+        
+        <div className="space-y-2">
+          <Input
+            type="tel"
+            placeholder="Phone"
+            value={userData?.contact?.phone ?? ""}
+            onChange={(e) => handleContactChange(e.target.value)}
+            className={errors.contact ? "border-red-500" : ""}
+          />
+          {errors.contact && (
+            <p className="text-sm text-red-500">{errors.contact}</p>
+          )}
+        </div>
+      </div>
+      <div className="space-y-3">
+      <label className="block font-medium">
+        {userData.resume_url ? "Update Resume" : "Upload Resume (PDF)"}
+      </label>
+
+      <div className="border-2 border-dashed rounded-lg p-6 text-center">
+        {userData.resume_url ? (
+          <div className="h-30 border rounded">
+            <iframe
+              src={`https://docs.google.com/gview?url=${encodeURIComponent(userData.resume_url)}&embedded=true`}
+              className="w-full h-full"
+              title="Resume Preview"
+            />
+          </div>
+        ) : null}
+
+        <input
+          type="file"
+          id="resume"
+          className="hidden"
+          accept="application/pdf"
+          onChange={handleResumeSelect}
+        />
+        
+        <label htmlFor="resume" className="flex flex-col items-center gap-2 cursor-pointer">
+          <FileText className="w-8 h-8 text-gray-400" />
+          <span className="text-sm text-gray-600">
+            {userData.resume_url ? "Click to Update or drag and drop" : "Click to upload or drag and drop"}
+          </span>
+          <span className="text-xs text-gray-400">PDF (max. 10MB)</span>
+        </label>
+      </div>
+    </div>
+
+
+      <Dialog 
+        open={resumeDialog.isOpen} 
+        onOpenChange={(open) => {
+          if (!open) {
+            URL.revokeObjectURL(selectedResume?.preview || '');
+            setSelectedResume(null);
+          }
+          setResumeDialog(prev => ({ ...prev, isOpen: open }));
+        }}
+      >
+        <DialogContent className="sm:max-w-lg bg-primary text-white">
+          <DialogHeader>
+            <DialogTitle>Upload Resume</DialogTitle>
+            <DialogDescription>
+              Preview and confirm your resume upload
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="p-4 bg-gray-600 rounded-lg">
+              <div className="flex items-center gap-3">
+                <FileText className="w-8 h-8 text-blue-500" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {selectedResume?.file.name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                  {selectedResume?.file?.size ? (selectedResume.file.size / (1024 * 1024)).toFixed(2) + " MB" : "0 MB"}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Input
-                  placeholder="Username"
-                  value={userData.username}
-                  onChange={(e) => handleInputChange("username", e.target.value)}
-                  className={errors.username ? "border-red-500" : ""}
+
+            {selectedResume?.preview && (
+              <div className="h-96 border rounded">
+                <iframe 
+                  src={selectedResume.preview} 
+                  className="w-full h-full"
+                  title="Resume Preview"
                 />
-                {errors.username && (
-                  <p className="text-sm text-red-500">{errors.username}</p>
-                )}
               </div>
-              <div className="space-y-2">
-                <Input
-                  type="email"
-                  placeholder="Email"
-                  value={userData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={errors.email ? "border-red-500" : ""}
-                />
-                {errors.email && (
-                  <p className="text-sm text-red-500">{errors.email}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Input
-                  type="tel"
-                  placeholder="Phone"
-                  value={userData?.contact?.phone || undefined}
-                  onChange={(e) => handleContactChange(e.target.value)}
-                  className={errors.contact ? "border-red-500" : ""}
-                />
-                {errors.contact && (
-                  <p className="text-sm text-red-500">{errors.contact}</p>
-                )}
-              </div>
-            </div>
-          </TabsContent>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+            className='bg-gray-700 cursor-pointer'
+              variant="outline"
+              onClick={() => {
+                URL.revokeObjectURL(selectedResume?.preview || '');
+                setSelectedResume(null);
+                setResumeDialog({ isOpen: false, isUploading: false });
+              }}
+              disabled={resumeDialog.isUploading}
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResumeUpload}
+              disabled={resumeDialog.isUploading}
+              className='cursor-pointer'
+            >
+              {resumeDialog.isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <BookCheck className="w-4 h-4 mr-2" />
+                  Confirm Upload
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </TabsContent>
+
 
           <TabsContent value="skills" className="space-y-6 ">
             {["skills", "job_types", "industries"].map((field) => (

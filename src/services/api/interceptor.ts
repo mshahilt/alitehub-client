@@ -16,7 +16,7 @@ export const setupInterceptors = (axiosInstance: AxiosInstance) => {
         (config: InternalAxiosRequestConfig) => {
             const token = localStorage.getItem("token");
             if (token) {
-                config.headers.Authorization = token
+                config.headers.Authorization = token 
             }
             return config;
         },

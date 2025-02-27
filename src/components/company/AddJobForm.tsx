@@ -159,7 +159,7 @@ const AddJobForm: React.FC = () => {
       toast.warn('Please add screening question');
       return;
     }
-    const response = await axiosInstance.post('/company/job/add', {
+    const response = await axiosInstance.post('/job/add', {
         jobDetails: formData,
         screeningQuiz: questions
     })

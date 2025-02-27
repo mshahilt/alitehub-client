@@ -9,7 +9,7 @@ import { setCompanyFormData } from "../../../app/redux/slices/company/companyAut
 import { generateOtp } from "../../../services/api/auth/authApi";
 import debounce from "lodash.debounce";
 import LoadingScreen from "../../Loading/Loading";
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin} from "@react-oauth/google";
 import { googleLogin } from '../../../services/api/auth/authApi';
 import {jwtDecode} from "jwt-decode";
 import EmailVerificationModal from "../../Otp/OtpModal";

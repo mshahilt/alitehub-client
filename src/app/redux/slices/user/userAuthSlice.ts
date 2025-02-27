@@ -12,6 +12,8 @@ export interface User {
         phone: string | null;
       };
       profile_picture: string | null;
+      resume_url: string | null;
+      video_url: string | null;
       job_types: string[];
       industries: string[];
       skills: string[];
@@ -50,6 +52,8 @@ const initialState: UserAuthState = {
         phone: null,
       },
       profile_picture: null,
+      resume_url: null,
+      video_url: null,
       job_types: [],
       industries: [],
       skills: [],
@@ -92,7 +96,15 @@ export const getMe = createAsyncThunk<User>(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.get(`/getMe`);
-            console.log("get me",response.data.user)
+            console.log("get me", response.data.user);
+
+            if (response.data.user.isBlocked) {
+                alert("User blocked by admin")
+                localStorage.removeItem("token");
+                window.location.href = "/login"; 
+                return rejectWithValue("User is blocked");
+            }
+
             return response.data.user;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || "Failed to fetch user");
@@ -190,7 +202,6 @@ const userAuthSlice = createSlice({
             .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<UserAuthState>) => {
                 state.loading = false;
                 state.user = action.payload.user;
-                console.log('helllo world',action.payload.ownAccount)
                 state.ownAccount = action.payload.ownAccount;
             })
             .addCase(fetchUserProfile.rejected, (state, action) => {

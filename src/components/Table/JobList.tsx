@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Job {
   id: string;
@@ -16,6 +17,23 @@ interface JobListProps {
 }
 
 const JobList: React.FC<JobListProps> = ({ jobs }) => {
+  const navigate = useNavigate();
+  const [hoveredJob, setHoveredJob] = useState<string | null>(null);
+  const [clickedJob, setClickedJob] = useState<string | null>(null);
+
+  const handleJobClick = (jobId: string) => {
+    setClickedJob(jobId);
+    
+    setTimeout(() => {
+      navigate(`/jobs/${jobId}`);
+    }, 300);
+  };
+
+  const handleRemoveClick = (e: React.MouseEvent, jobId: string) => {
+    e.stopPropagation();
+    console.log(`Remove job ${jobId}`);
+  };
+
   return (
     <div className="bg-secondary p-6 rounded-xl">
       <div className="mb-6">
@@ -27,11 +45,22 @@ const JobList: React.FC<JobListProps> = ({ jobs }) => {
         {jobs.map((job) => (
           <div
             key={job.id}
-            className="bg-purple-900 rounded-lg p-4 flex items-center gap-4 relative"
+            className={`bg-purple-900 rounded-lg p-4 flex items-center gap-4 relative cursor-pointer transition-all duration-300 ${
+              hoveredJob === job.id ? "transform scale-102 shadow-lg" : ""
+            } ${
+              clickedJob === job.id ? "transform scale-95 opacity-80" : ""
+            }`}
+            onClick={() => handleJobClick(job.id)}
+            onMouseEnter={() => setHoveredJob(job.id)}
+            onMouseLeave={() => setHoveredJob(null)}
           >
             <div className="shrink-0">
-              <div className="w-16 h-16 bg-yellow-300 rounded-full flex items-center justify-center">
-                <img src={job.company_profile} alt="Company Logo" className="w-15 h-15 object-cover rounded-full" />
+              <div className="w-16 h-16 bg-yellow-300 rounded-full flex items-center justify-center overflow-hidden">
+                <img 
+                  src={job.company_profile} 
+                  alt="Company Logo" 
+                  className="w-full h-full object-cover" 
+                />
               </div>
             </div>
 
@@ -41,9 +70,19 @@ const JobList: React.FC<JobListProps> = ({ jobs }) => {
               <p className="text-gray-400 text-sm mt-1">
                 {job.location} {job.isOnsite ? "(On-site)" : "(Remote)"}
               </p>
+              <p className="text-gray-500 text-xs mt-1">
+                Posted: {job.postedDate}
+              </p>
             </div>
 
-            <button className="absolute top-4 right-4 text-gray-400 hover:text-white">
+            <div className={`absolute top-0 left-0 w-full h-full bg-purple-700 rounded-lg opacity-0 transition-opacity duration-300 ${
+              hoveredJob === job.id ? "opacity-10" : ""
+            }`} />
+
+            <button 
+              className="absolute top-4 right-4 text-gray-400 hover:text-white z-10 p-1"
+              onClick={(e) => handleRemoveClick(e, job.id)}
+            >
               <X size={18} />
             </button>
           </div>

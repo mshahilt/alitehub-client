@@ -30,7 +30,7 @@ export const GenerateAiQuestion = createAsyncThunk<
     "JobQuiz/generateQuestion",
     async (jobData, { rejectWithValue }) => {
         try {
-            const response = await axiosInstance.post('/company/job/generateQuizQuestions', jobData);
+            const response = await axiosInstance.post('/job/generateQuizQuestions', jobData);
             return response.data;  
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || "Failed to generate Questions");

@@ -5,6 +5,7 @@ import getCompanyMenuItems from '../../app/data/companySidebarItems';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../app/redux/store';
 import { getCompany } from '../../app/redux/slices/company/companyAuthSlice';
+import LoadingScreen from '@/components/Loading/Loading';
 
 const CompanyHomePage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,6 +32,7 @@ const CompanyHomePage = () => {
 
   return (
     <>
+    {loading && LoadingScreen}
     <div className="flex bg-primary min-h-screen">
         <Sidebar
           menuItems={companySidebarItems}

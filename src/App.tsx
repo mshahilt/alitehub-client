@@ -17,7 +17,10 @@ import AdminLogin from "./page/Admin/AdminLogin"
 import CompanyManagement from "./page/Admin/CompanyManagement";
 import CompanyAddNewJobPage from "./page/Company/CompanyAddNewJobPage";
 import JobManagement from "./page/Company/JobManagement";
+import CompanyApplicationsPage from "./page/Company/CompanyApplicationsPage";
 import Jobs from "./page/User/Jobs";
+import Job from "./page/User/Job";
+import Application from "./page/User/Applications";
 const App = () => {
   return (
     <>
@@ -32,11 +35,13 @@ const App = () => {
           <Route path="/admin/login" element={<ProtectedAuthRoute element={<AdminLogin />}/>} />
 
           <Route path="/jobs" element={<ProtectedRoute element={<Jobs />} requiredRole="user" />} />
-
+          <Route path="/jobs/:jobId" element={<ProtectedRoute element={<Job />} requiredRole="user" />} />
           <Route path="/" element={<ProtectedRoute element={<Home />} requiredRole="user" />} />
+          <Route path="/applications" element={<ProtectedRoute element={<Application />} requiredRole="user" />} />
           <Route path="/company" element={<ProtectedRoute element={<CompanyHomePage />} requiredRole="company" />} />
           <Route path="/company/jobs/add" element={<ProtectedRoute element={<CompanyAddNewJobPage />} requiredRole="company" />} />
           <Route path="/company/jobs" element={<ProtectedRoute element={<JobManagement />} requiredRole="company" />} />
+          <Route path="/company/applications" element={<ProtectedRoute element={<CompanyApplicationsPage />} requiredRole="company" />} />
           <Route path="/:username" element={<ProtectedRoute element={<Profile />} requiredRole="user" />} />
           <Route path="/company/:companyIdentifier" element={<ProtectedRoute element={<CompanyProfilePage />} requiredRole="company" />} />
 

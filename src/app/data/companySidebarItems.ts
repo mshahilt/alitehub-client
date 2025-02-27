@@ -23,7 +23,7 @@ const getCompanyMenuItems = (companyIdentifier?: string): MenuItem[] => [
     { icon: MessageSquare, label: 'Messaged', isActive: false ,link:'/company/messages' },
     { icon: Bell, label: 'Notification' ,isActive: false ,link:'/company/notifications'},
     { icon: ClipboardList, label: 'Job Management', isActive: false ,link:'/company/jobs'},
-    { icon: FileText, label: 'Applicants', isActive: false ,link:'/company/applicants'},
+    { icon: FileText, label: 'Applicants', isActive: false ,link:'/company/applications'},
     { icon: Building, label: `${companyIdentifier}`, isActive: false ,link:`/company/${companyIdentifier}`},
     { icon: MoreHorizontal, label: 'More', isActive: false ,link:'/'}
 ];
