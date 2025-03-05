@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import axiosInstance from '@/services/api/userInstance';
 interface UserProfile {
+  id: string;
   name: string;
   username: string;
   email: string;
@@ -56,6 +57,7 @@ const DEFAULT_EXPERIENCE = {
 };
 
 const INITIAL_STATE: UserProfile = {
+  id: "",
   name: '',
   username: '',
   email: '',

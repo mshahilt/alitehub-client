@@ -11,16 +11,13 @@ const Home = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const { user } = useSelector((state: RootState) => state.userAuth) as { 
-    user: { name: string; username: string; email: string }, 
-    loading: boolean,
-  };
+  const { existingUser } = useSelector((state: RootState) => state.userAuth)
 
   useEffect(() => {
    dispatch(getMe());
   }, [dispatch]);
 
-  const userSidebarItems = getUserMenuItems(user?.username);
+  const userSidebarItems = getUserMenuItems(existingUser?.username);
 
   useEffect(() => {
     const handleResize = () => {

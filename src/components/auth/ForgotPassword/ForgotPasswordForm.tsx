@@ -198,7 +198,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordProps> = ({ formFor }) => {
                                     type="text"
                                     value={otp}
                                     onChange={(e) => setOtp(e.target.value)}
-                                    className="w-full p-2 border rounded"
+                                    className="w-full border border-gray-300 p-2 rounded-sm focus:border-gray-400"
                                     placeholder="Enter OTP"
                                 />
                                 {otpError && (
@@ -239,7 +239,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordProps> = ({ formFor }) => {
                                     type="password"
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
-                                    className="w-full p-2 border rounded"
+                                    className="w-full border border-gray-300 p-2 rounded-sm focus:border-gray-400"
                                     placeholder="Enter new password"
                                 />
                             </div>
@@ -251,7 +251,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordProps> = ({ formFor }) => {
                                     type="password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full p-2 border rounded"
+                                    className="w-full border border-gray-300 p-2 rounded-sm focus:border-gray-400"
                                     placeholder="Confirm new password"
                                 />
                                 {passwordError && (

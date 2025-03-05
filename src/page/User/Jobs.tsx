@@ -10,11 +10,8 @@ const Jobs = () => {
     const [isExpanded, setIsExpanded] = useState(true);
     const [jobs, setJobs] = useState<any[]>([]);  
 
-    const { user } = useSelector((state: RootState) => state.userAuth) as { 
-        user: { name: string, username: string; email: string }, 
-        loading: boolean,
-    };
-    const userSidebarItems = getUserMenuItems(user?.username);
+    const { existingUser } = useSelector((state: RootState) => state.userAuth) 
+    const userSidebarItems = getUserMenuItems(existingUser?.username);
 
     useEffect(() => {
         const fetchJobs = async () => {

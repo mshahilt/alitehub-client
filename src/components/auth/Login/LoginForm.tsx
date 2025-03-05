@@ -66,6 +66,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ formFor }) => {
   };
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
+    console.log("i am working")
+    console.log(credentialResponse)
     try {
       const { credential } = credentialResponse;
       if (!credential) {
@@ -80,7 +82,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ formFor }) => {
       
       if (googleLogin.fulfilled.match(action)) {
         localStorage.setItem("token", action.payload.accessToken);
-        location.reload();
         toast.success("Google login successful!");
       } else {
         const errorMessage = action.payload ? String(action.payload) : "Google login failed";
@@ -112,6 +113,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ formFor }) => {
 
             <div className="w-full flex items-center justify-center gap-2 py-3 border rounded-lg border-gray-700 bg-gray-800 hover:bg-gray-700 transition-all duration-300 transform hover:scale-[1.02] px-4">
               <GoogleLogin 
+                theme='filled_black'
                 onSuccess={handleGoogleSuccess} 
                 onError={handleGoogleError}
                 useOneTap

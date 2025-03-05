@@ -1,9 +1,11 @@
-import React, { ReactElement } from "react";
+import React, { ReactElement, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { refreshToken } from "../../services/api/interceptor";
 import LoadingScreen from "../Loading/Loading";
-
+import { getMe } from "@/app/redux/slices/user/userAuthSlice";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/app/redux/store";
 
 interface ProtectedRouteProps {
   element: ReactElement;
@@ -16,9 +18,11 @@ interface DecodedToken {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, requiredRole }) => {
-  const [isAuthorized, setIsAuthorized] = React.useState<boolean | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const dispatch = useDispatch<AppDispatch>();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkAuthorization = async () => {
       const token = localStorage.getItem("token");
 
@@ -29,21 +33,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, requiredRole }
 
       try {
         const decodedToken: DecodedToken = jwtDecode(token);
-        const userRole = decodedToken?.role;
+        const role = decodedToken?.role;
         const expiryTime = decodedToken?.exp ? decodedToken.exp * 1000 : 0;
 
         if (Date.now() > expiryTime) {
           const newToken = await refreshToken();
           if (newToken) {
             localStorage.setItem("token", newToken);
+            setUserRole(role || null);
             setIsAuthorized(true);
           } else {
             localStorage.removeItem("token");
             setIsAuthorized(false);
           }
-        } else if (requiredRole && requiredRole !== userRole) {
+        } else if (requiredRole && requiredRole !== role) {
           setIsAuthorized(false);
         } else {
+          setUserRole(role || null);
           setIsAuthorized(true);
         }
       } catch (error) {
@@ -55,8 +61,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, requiredRole }
     checkAuthorization();
   }, [requiredRole]);
 
+  useEffect(() => {
+    if (isAuthorized && userRole === "user") {
+      dispatch(getMe());
+    }
+  }, [isAuthorized, userRole, dispatch]);
+
   if (isAuthorized === null) {
-    return <LoadingScreen/>;
+    return <LoadingScreen />;
   }
 
   if (!isAuthorized) {

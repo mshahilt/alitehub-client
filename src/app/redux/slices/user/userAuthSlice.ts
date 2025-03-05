@@ -4,33 +4,33 @@ import axiosInstance from "../../../../services/api/userInstance";
 import axios from "axios";
 
 export interface User {
-
+    id: string;
     name: string;
     username: string;
     email: string;
     contact: {
         phone: string | null;
-      };
-      profile_picture: string | null;
-      resume_url: string | null;
-      video_url: string | null;
-      job_types: string[];
-      industries: string[];
-      skills: string[];
-      education: Array<{
+    };
+    profile_picture: string | null;
+    resume_url: string | null;
+    video_url: string | null;
+    job_types: string[];
+    industries: string[];
+    skills: string[];
+    education: Array<{
         institution: string;
         degree: string;
         field: string;
         start_date: string;
         end_date: string;
-      }>;
-      experience: Array<{
+    }>;
+    experience: Array<{
         company: string;
         title: string;
         start_date: string;
         end_date: string;
         description: string;
-      }>;
+    }>;
 }
 
 export interface UserAuthState {
@@ -38,55 +38,109 @@ export interface UserAuthState {
     loading: boolean;
     error: string | null;
     ownAccount: boolean;
+    connectionInfo: {
+        id: string;
+        userId1: string;
+        userId2: string;
+        status: string;
+        requestedAt: Date;
+    };
     isUsernameAvailable: {
         status: boolean | null;
         loading: boolean;
     };
+    fetchedProfile: User | null;
+    existingUser: User;
 }
+
 const initialState: UserAuthState = {
     user: {
-      name: "",
-      username: "",
-      email: "",
-      contact: {
-        phone: null,
-      },
-      profile_picture: null,
-      resume_url: null,
-      video_url: null,
-      job_types: [],
-      industries: [],
-      skills: [],
-      education: [],
-      experience: [],
+        id: "",
+        name: "",
+        username: "",
+        email: "",
+        contact: {
+            phone: null,
+        },
+        profile_picture: null,
+        resume_url: null,
+        video_url: null,
+        job_types: [],
+        industries: [],
+        skills: [],
+        education: [],
+        experience: [],
     },
     ownAccount: false,
+    connectionInfo: {
+        id: "",
+        userId1: "",
+        userId2: "",
+        status: "",
+        requestedAt: new Date(),
+    },
     loading: false,
     error: null,
     isUsernameAvailable: { status: null, loading: false },
-  };
-  
+    fetchedProfile: null,
+    existingUser: {
+        id: "",
+        name: "",
+        username: "",
+        email: "",
+        contact: {
+            phone: null,
+        },
+        profile_picture: null,
+        resume_url: null,
+        video_url: null,
+        job_types: [],
+        industries: [],
+        skills: [],
+        education: [],
+        experience: [],
+    },
+};
 
 const usernameCheck = createAsyncThunk(
     "auth/usernameCheck",
     async (username: string, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.get(`/auth/user/checkUsernameAvailability?username=${username}`);
-            return response.data; 
+            return response.data;
         } catch (error) {
             return rejectWithValue(axios.isAxiosError(error) ? error.response?.data : error);
         }
     }
 );
 
-export const fetchUserProfile = createAsyncThunk<User, string>(
+export const fetchUserProfile = createAsyncThunk<
+    { user: User; ownAccount: boolean; connectionInfo: any },
+    string
+>(
     "user/fetchProfile",
     async (username, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.get(`/${username}`);
-            return response.data;
+            console.log("inside fetch user profile async thunk", response.data);
+            return response.data; // Return the full payload: { user, ownAccount, connectionInfo }
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || "Failed to fetch profile");
+        }
+    }
+);
+
+export const followOrUnfollow = createAsyncThunk<void, { userId2: string }>(
+    "user/followOrUnfollow",
+    async ({ userId2 }, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.post('/connection/', {
+                userId2,
+            });
+            console.log("Response after follow/unfollow:", response);
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || "Failed to follow/unfollow user");
         }
     }
 );
@@ -96,12 +150,12 @@ export const getMe = createAsyncThunk<User>(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axiosInstance.get(`/getMe`);
-            console.log("get me", response.data.user);
+            console.log("getMe response:", response.data.user);
 
             if (response.data.user.isBlocked) {
-                alert("User blocked by admin")
+                alert("User blocked by admin");
                 localStorage.removeItem("token");
-                window.location.href = "/login"; 
+                window.location.href = "/login";
                 return rejectWithValue("User is blocked");
             }
 
@@ -141,6 +195,7 @@ const userAuthSlice = createSlice({
             })
             .addCase(login.fulfilled, (state, action: PayloadAction<User>) => {
                 state.loading = false;
+                state.existingUser = action.payload;
                 state.user = action.payload;
             })
             .addCase(login.rejected, (state, action) => {
@@ -152,8 +207,8 @@ const userAuthSlice = createSlice({
                 state.error = null;
             })
             .addCase(register.fulfilled, (state, action: PayloadAction<User>) => {
-                getMe()
                 state.loading = false;
+                state.existingUser = action.payload;
                 state.user = action.payload;
             })
             .addCase(register.rejected, (state, action) => {
@@ -181,7 +236,7 @@ const userAuthSlice = createSlice({
                 state.loading = false;
             })
             .addCase(generateOtp.rejected, (state, action) => {
-                state.loading = false; 
+                state.loading = false;
                 state.error = typeof action.payload === "string" ? action.payload : "OTP generation failed";
             })
             .addCase(googleLogin.pending, (state) => {
@@ -190,6 +245,7 @@ const userAuthSlice = createSlice({
             })
             .addCase(googleLogin.fulfilled, (state, action: PayloadAction<User>) => {
                 state.loading = false;
+                state.existingUser = action.payload;
                 state.user = action.payload;
             })
             .addCase(googleLogin.rejected, (state, action) => {
@@ -199,10 +255,13 @@ const userAuthSlice = createSlice({
             .addCase(fetchUserProfile.pending, (state) => {
                 state.loading = true;
             })
-            .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<UserAuthState>) => {
+            .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<{ user: User; ownAccount: boolean; connectionInfo: any }>) => {
                 state.loading = false;
-                state.user = action.payload.user;
+                console.log("inside fetch user profile reducer", action.payload);
+                state.fetchedProfile = action.payload.user;
                 state.ownAccount = action.payload.ownAccount;
+                state.connectionInfo = action.payload.connectionInfo;
+                state.user = action.payload.user;
             })
             .addCase(fetchUserProfile.rejected, (state, action) => {
                 state.loading = false;
@@ -213,11 +272,11 @@ const userAuthSlice = createSlice({
             })
             .addCase(getMe.fulfilled, (state, action) => {
                 state.loading = false;
-                state.user = action.payload;
+                state.existingUser = action.payload;
             })
             .addCase(getMe.rejected, (state) => {
                 state.loading = false;
-            })
+            });
     },
 });
 

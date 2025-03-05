@@ -1,8 +1,8 @@
-import { Camera, Download, Edit2, FileText, Loader2, Upload, Video, X } from 'lucide-react';
+import { Camera, Download, Edit, Edit2, FileText, Loader2, Upload, UserCheck, UserPlus, UserX, Video, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../app/redux/store';
 import { useEffect, useRef, useState } from 'react';
-import { fetchUserProfile, User } from '../../app/redux/slices/user/userAuthSlice';
+import { fetchUserProfile, followOrUnfollow, User } from '../../app/redux/slices/user/userAuthSlice';
 import ProfileSkeleton from '../Loading/SkeltonProfileLoading';
 import EditProfile from './EditeProfile';
 import axiosInstance from '@/services/api/userInstance';
@@ -19,7 +19,7 @@ interface ProfileComponentProps {
 
 const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { user, loading, ownAccount } = useSelector((state: RootState) => state.userAuth);
+  const { user, loading, ownAccount, connectionInfo } = useSelector((state: RootState) => state.userAuth);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [video, setVideo] = useState<string | null>(null);
@@ -46,6 +46,9 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+  const handleFollowUnfollow = () => {
+    dispatch(followOrUnfollow({ userId2: user.id }));
   };
 
   const validateFile = (file: File): boolean => {
@@ -84,7 +87,7 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
       const response = await axiosInstance.get('/getSignedUploadUrl');
       console.log(response);
       const { signature, timestamp, upload_url, api_key } = response.data.signedUrl;
-
+ 
       if (!signature || !timestamp || !upload_url || !api_key) {
         throw new Error("Invalid upload credentials received");
       }
@@ -371,12 +374,53 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
             )}
           </div>
         )}
+<div className="mt-4 text-sm text-gray-300 flex justify-between items-center">
+      <div className="space-y-1">
+        <p>Lorem Ipsum is simply dummy text of</p>
+        <p>the printing and typesetting industry.</p>
+        <p>Lorem Ipsum</p>
+      </div>
+      
+      <div className="flex space-x-3">
+        {ownAccount ? (
+          <button className="text-blue-500 text-sm hover:underline flex items-center">
+            <Edit size={16} className="mr-1" />
+            Edit Bio
+          </button>
+        ) : (
+          <button
+            onClick={() => handleFollowUnfollow()}
+            className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 px-3 py-1 rounded-md cursor-pointer flex items-center"
+          >
+            {connectionInfo ? (
+              connectionInfo.status === "accepted" ? (
+                <>
+                  <UserX size={18} className="mr-2 text-red-400" />
+                  Unfollow
+                </>
+              ) : connectionInfo.status === "pending" ? (
+                <>
+                  <UserCheck size={18} className="mr-2 text-yellow-400" />
+                  Requested
+                </>
+              ) : (
+                <>
+                  <UserPlus size={18} className="mr-2 text-blue-400" />
+                  Follow
+                </>
+              )
+            ) : (
+              <>
+                <UserPlus size={18} className="mr-2 text-blue-400" />
+                Follow
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    </div>
 
-        <div className="mt-4 text-sm text-gray-300 space-y-1">
-          <p>Lorem Ipsum is simply dummy text of</p>
-          <p>the printing and typesetting industry.</p>
-          <p>Lorem Ipsum</p>
-        </div>
+
 
         <div className="flex gap-6 mt-4 text-sm">
           <div>
