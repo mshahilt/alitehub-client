@@ -62,6 +62,12 @@ export const getCompany = createAsyncThunk<Company>(
     try {
       const response = await axiosInstance.get(`/company/getCompany`);
       console.log("from getcompany",response.data);
+      if(response.data.company.isBlock){
+        alert("Company blocked by admin");
+        localStorage.removeItem("token");
+        window.location.href = "/company/login";
+        return rejectWithValue("Admin is blocked");
+      }
       return response.data.company;
     } catch (error) {
       return rejectWithValue(axios.isAxiosError(error) ? error.response?.data : error);

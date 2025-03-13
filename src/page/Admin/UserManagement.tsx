@@ -43,8 +43,7 @@ const UserManagement = () => {
 
     const handleBlock = async (userId: string) => {
         try {
-            console.log("called")
-            await adminAxiosInstance.patch(`/blockOrUnblock/${userId}`);
+            await adminAxiosInstance.patch(`/blockOrUnblockUser/${userId}`);
             fetchUsers();
         } catch (error) {
             console.error("Error blocking/unblocking user:", error);
@@ -70,6 +69,7 @@ const UserManagement = () => {
             <div className="flex-1 bg-black min-h-screen flex justify-center p-1">
                 <div className="w-full bg-black max-w-6xl">
                     <GenericTable 
+                    bgColor="bg-black"
                         columns={columns} 
                         data={users} 
                         actions={(user: User) => (

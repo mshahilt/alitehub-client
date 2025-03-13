@@ -71,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, isExpanded, setIsExpanded,
                 onMouseLeave={() => {
                   timeoutId = setTimeout(() => {
                     setHoveredItem(null);
-                  }, 200); // Small delay before closing
+                  }, 200); 
                 }}
               >
                 {/* Menu Item */}

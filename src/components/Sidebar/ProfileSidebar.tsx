@@ -40,7 +40,7 @@ const ProfileSidebar: React.FC = () => {
         <div className="mb-10">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl md:text-2xl font-semibold text-gray-200 flex items-center">
-              <Award className="w-5 h-5 md:w-6 md:h-6 mr-2 text-indigo-400" />
+              <Award className="w-5 h-5 md:w-6 md:h-6 mr-2 text-gray-400" />
               Education
             </h2>
           </div>

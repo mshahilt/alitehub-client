@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { login, register, generateOtp, googleLogin } from "../../../../services/api/auth/authApi";
 import axiosInstance from "../../../../services/api/userInstance";
 import axios from "axios";
+import { RootState } from "../../store";
 
 export interface User {
     id: string;
@@ -123,27 +124,57 @@ export const fetchUserProfile = createAsyncThunk<
         try {
             const response = await axiosInstance.get(`/${username}`);
             console.log("inside fetch user profile async thunk", response.data);
-            return response.data; // Return the full payload: { user, ownAccount, connectionInfo }
+            return response.data;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || "Failed to fetch profile");
         }
     }
 );
 
-export const followOrUnfollow = createAsyncThunk<void, { userId2: string }>(
+export const followOrUnfollow = createAsyncThunk<
+    { id: string; userId1: string; userId2: string; status: string; requestedAt: Date },
+    { userId2: string; connectionStatus: string }
+>(
     "user/followOrUnfollow",
-    async ({ userId2 }, { rejectWithValue }) => {
+    async ({ userId2, connectionStatus }, { rejectWithValue, getState }) => {
         try {
-            const response = await axiosInstance.post('/connection/', {
-                userId2,
-            });
+            const state = getState() as RootState;
+            const connectionInfo = state.userAuth.connectionInfo;
+
+            if (connectionStatus) {
+                if (connectionStatus === "accept") {
+                    console.log("inside async thunk", connectionInfo);
+                    const response = await axiosInstance.put(
+                        `/connection/${connectionInfo.id}/accept`,
+                        { userId2 }
+                    );
+                    console.log("Response after accepting follow request:", response);
+                    return response.data.data;
+                } else if (connectionStatus === "reject") {
+                    const response = await axiosInstance.put(
+                        `/connection/${connectionInfo.id}/decline`,
+                        { userId2 }
+                    );
+                    console.log("Response after rejecting follow request:", response);
+                    return response.data.data;
+                } else if (connectionStatus === "disconnect") {
+                    const response = await axiosInstance.delete(`/connection/${connectionInfo.id}`);
+                    console.log("Response after unfollowing:", response);
+                    return response.data.data;
+                }
+            }
+
+            const response = await axiosInstance.post("/connection/", { userId2 });
             console.log("Response after follow/unfollow:", response);
-            return response.data;
+            return response.data.data;
         } catch (error: any) {
-            return rejectWithValue(error.response?.data?.message || "Failed to follow/unfollow user");
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to follow/unfollow user"
+            );
         }
     }
 );
+
 
 export const getMe = createAsyncThunk<User>(
     "user/getMe",
@@ -276,6 +307,18 @@ const userAuthSlice = createSlice({
             })
             .addCase(getMe.rejected, (state) => {
                 state.loading = false;
+            })
+            .addCase(followOrUnfollow.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(followOrUnfollow.fulfilled, (state, action) => {
+                state.loading = false;
+                console.log("inside follow/unfollow reducer", action.payload);
+                state.connectionInfo = action.payload;
+            })
+            .addCase(followOrUnfollow.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
             });
     },
 });

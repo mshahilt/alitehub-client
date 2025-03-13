@@ -6,7 +6,7 @@ import getUserMenuItems from "@/app/data/userSidebarItems";
 import JobDetail from "@/components/UserJob/JobDetail";
 import axiosInstance from "@/services/api/userInstance";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 interface JobListProps {
   id: string;
@@ -46,7 +46,7 @@ const Job = () => {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const response = await axiosInstance.get(`/jobs/${jobId}`);
+        const response = await axiosInstance.get(`/job/${jobId}`);
         console.log("Fetched job:", response.data.job);
         setJob(response.data.job);
       } catch (error) {
@@ -67,7 +67,7 @@ const Job = () => {
   useEffect(() => {
     const fetchQuizQuestion = async () => {
       try {
-        const response = await axiosInstance.get(`/quiz/${jobId}`);
+        const response = await axiosInstance.get(`/job/quiz/${jobId}`);
         console.log('Fetched Quized', response.data.quiz);
         setQuestion(response.data.quiz.questions);
         setQuizId(response.data.quiz.id);
@@ -100,7 +100,7 @@ const Job = () => {
 
       <div className="flex-1 min-h-screen ml-auto md:ml-1/4 mr-0 md:mr-1/4 flex justify-center p-1 z-2">
         <div className="w-full max-w-2xl min-h-screen">
-          {job ? <JobDetail job={job} handleApply={handleApplyForJob} apply={apply} questions={questions} quizId={quizId}/>: <p className="text-gray-500">Loading job details...</p>}
+          {job ? <JobDetail job={job} handleApply={handleApplyForJob} apply={apply} questions={questions} quizId={quizId} usage="user"/>: <p className="text-gray-500">Loading job details...</p>}
         </div>
       </div>
     </div>

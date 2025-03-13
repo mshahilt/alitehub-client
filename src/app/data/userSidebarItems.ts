@@ -24,7 +24,7 @@ const getUserMenuItems = (username?: string): MenuItem[] => [
     { icon: Grid, label: 'Elite hub', isActive: true, link: '/' },
     { icon: Home, label: 'Home', link: '/' },
     { icon: Search, label: 'Search', link: '/search' },
-    { icon: MessageSquare, label: 'Messages', link: '/messages' },
+    { icon: MessageSquare, label: 'Messages', link: '/message' },
     { icon: Layout, label: 'Jobs', link: '/jobs' },
     { icon: FileText, label: 'Applications', isActive: false, link: '/applications' },
     { icon: User, label: `${username || 'Profile'}`, link: username ? `/${username}` : '/profile' },

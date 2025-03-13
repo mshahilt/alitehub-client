@@ -58,6 +58,9 @@ const quizSlice = createSlice({
     resetQuestions: (state) => {
       state.questions = [];
     },
+    setQuestions: (state, action: PayloadAction<QuizQuestion[]>) => {
+  state.questions = action.payload;
+    }
   },
   extraReducers(builder) {
     builder
@@ -80,5 +83,5 @@ const quizSlice = createSlice({
   
 });
 
-export const { addQuestion, removeQuestion, updateQuestion, resetQuestions } = quizSlice.actions;
+export const { addQuestion, removeQuestion, updateQuestion, resetQuestions, setQuestions } = quizSlice.actions;
 export default quizSlice.reducer;

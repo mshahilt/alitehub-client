@@ -1,5 +1,6 @@
 import { User } from "lucide-react";
 import QuizComponent from "./QuizComponent";
+import { useNavigate } from "react-router-dom";
 
 interface JobListProps {
     id: string;
@@ -19,7 +20,12 @@ interface JobListProps {
     skills: string[];
 }
 
-const JobDetail: React.FC<{ job: JobListProps, handleApply: any, apply: boolean, questions: { question: string; type: string; options: string[]; _id: string }[], quizId: string }> = ({ job, handleApply, apply, questions, quizId }) => {
+const JobDetail: React.FC<{ job: JobListProps, handleApply: any, apply: boolean, questions: { question: string; type: string; options: string[]; _id: string }[], quizId: string, usage: "user" | "company" }> = ({ job, handleApply, apply, questions, quizId, usage }) => {
+    const navigate = useNavigate();
+    console.log("usage", usage);
+    const handleEditJob = () => {
+        navigate(`/company/job/edit/${job.id}`);
+    }
     return (
       <>
        {apply && (
@@ -80,9 +86,16 @@ const JobDetail: React.FC<{ job: JobListProps, handleApply: any, apply: boolean,
                     <li>Test should contain questions to understand your skills.</li>
                     <li>Filtering process is based on this test</li>
                 </ul>
-                <button className="bg-green-600 text-xs text-white px-4 py-2 rounded-full" onClick={handleApply}>
-                    Start Test
-                </button>
+                {usage === "user" ? (
+                    <button className="bg-green-600 text-xs text-white px-4 py-2 rounded-full" onClick={handleApply}>
+                        Start Test
+                    </button>
+                ) : (
+                    <button className="bg-green-600 text-xs text-white px-4 py-2 rounded-full" onClick={handleEditJob}>
+                        Edit Job
+                    </button>
+                )}
+                
             </div>
 
             <div className="border-t border-gray-700 pt-6">

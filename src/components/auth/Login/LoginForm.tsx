@@ -142,7 +142,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ formFor }) => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl text-gray-100 bg-gray-700 border border-gray-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors duration-200"
+                  className="w-full px-4 py-3 rounded-xl text-gray-100 bg-gray-700 border border-gray-600 focus:border-gray-500 focus:ring-1 focus:ring-gray-500 transition-colors duration-200"
                   placeholder="Enter your email"
                 />
               </div>
@@ -157,7 +157,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ formFor }) => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl text-gray-100 bg-gray-700 border border-gray-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors duration-200"
+                  className="w-full px-4 py-3 rounded-xl text-gray-100 bg-gray-700 border border-gray-600 focus:border-gray-500 focus:ring-1 focus:ring-gray-500 transition-colors duration-200"
                   placeholder="Enter your password"
                 />
               </div>
@@ -165,7 +165,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ formFor }) => {
               <div className="text-right">
                 <a 
                   href="/forgot-password" 
-                  className="text-sm text-indigo-400 hover:text-indigo-300"
+                  className="text-sm text-gray-400 hover:text-gray-300"
                 >
                   Forgot password?
                 </a>
@@ -178,7 +178,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ formFor }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-xl p-3 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-xl p-3 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Signing in..." : "Sign in"}
               </button>
@@ -186,7 +186,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ formFor }) => {
 
             <p className="mt-8 text-center text-sm text-gray-400">
               Don't have an account?{' '}
-              <a href="/register" className="font-medium text-indigo-400 hover:text-indigo-300">
+              <a href="/register" className="font-medium text-gray-400 hover:text-gray-300">
                 Create one now
               </a>
             </p>

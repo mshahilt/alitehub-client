@@ -29,7 +29,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({ applications }) => {
   const handleApplicationClick = (applicationId: string) => {
     setClickedApplication(applicationId);
     setTimeout(() => {
-      navigate(`/applications/${applicationId}`);
+      navigate(`/application/${applicationId}`);
     }, 300);
   };
 

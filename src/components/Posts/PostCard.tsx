@@ -1,26 +1,72 @@
 import { Heart, MessageSquare, Share2, MoreHorizontal } from "lucide-react";
-import postData from "../../app/data/postData";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
+import axiosInstance from "@/services/api/userInstance";
+
+interface Post {
+  id: string;
+  media: string;
+  tags: string[];
+  title: string;
+  description: string;
+}
 
 const PostCard = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchPosts = useCallback(async () => {
+    if (isLoading || !hasMore) return;
+
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.get(`/post?page=${page}&limit=5`);
+      const newPosts: Post[] = response.data.posts;
+
+      if (newPosts.length === 0) {
+        setHasMore(false);
+      } else {
+        setPosts((prevPosts) => [
+          ...prevPosts,
+          ...newPosts.filter((newPost) => !prevPosts.some((post) => post.id === newPost.id)),
+        ]);
+        setPage((prevPage) => prevPage + 1);
+      }
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, isLoading, hasMore]);
+
   useEffect(() => {
-    const fetchData = async () => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop + 100 >=
+        document.documentElement.offsetHeight
+      ) {
+        fetchPosts();
+      }
     };
-    fetchData();
-  }, [])
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [fetchPosts]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
   return (
     <div className="space-y-6 w-full">
-      {postData.map((post, index) => (
-        <div
-          key={index}
-          className="bg-secondary p-4 rounded-lg shadow-md text-white ml-15">
-          
-          {/* Header */}
+      {posts.map((post) => (
+        <div key={post.id} className="bg-secondary p-4 rounded-lg shadow-md text-white ml-15">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div>
-                <h3 className="text-sm md:text-base font-semibold">{post.username}</h3>
-                <p className="text-xs md:text-sm text-gray-400">{post.postedOn}</p>
+                <h3 className="text-sm md:text-base font-semibold">Anonymous User</h3>
+                <p className="text-xs md:text-sm text-gray-400">Just now</p>
               </div>
             </div>
             <button className="text-gray-400 hover:text-white">
@@ -28,27 +74,29 @@ const PostCard = () => {
             </button>
           </div>
 
-          {/* Content */}
           <div className="mb-3">
             <p className="text-sm md:text-base text-gray-200 mb-2 break-words">
-              {post.content}{" "}
-              <span className="text-blue-500 hover:underline cursor-pointer">#hashtag</span>
+              {post.description}
+              {post.tags.map((tag, index) => (
+                <span key={index} className="text-blue-500 hover:underline cursor-pointer">
+                  {" "}
+                  #{tag}
+                </span>
+              ))}
             </p>
-            {post.image && (
+            {post.media && (
               <div className="rounded-lg overflow-hidden max-h-[300px]">
-                <img src={post.image} alt="Post" className="w-full h-auto object-cover" />
+                <img src={post.media} alt="Post" className="w-full h-auto object-cover" />
               </div>
             )}
           </div>
 
-          {/* Engagement Stats */}
           <div className="flex items-center gap-4 mb-3 text-xs sm:text-sm text-gray-400">
-            <span>{post.likeCount} Likes</span>
-            <span>{post.commentCount} Comments</span>
-            <span>{post.shareCount} Shares</span>
+            <span>100 Likes</span>
+            <span>50 Comments</span>
+            <span>20 Shares</span>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex items-center justify-between border-t border-gray-700 pt-3">
             <button className="flex items-center gap-2 text-gray-400 hover:text-white">
               <Heart size={20} className="hover:fill-current" />
@@ -65,6 +113,14 @@ const PostCard = () => {
           </div>
         </div>
       ))}
+
+      {isLoading && (
+        <div className="text-center text-gray-400 py-4">Loading more posts...</div>
+      )}
+
+      {!hasMore && (
+        <div className="text-center text-gray-400 py-4">No more posts to load</div>
+      )}
     </div>
   );
 };

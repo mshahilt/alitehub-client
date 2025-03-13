@@ -1,8 +1,8 @@
-import { Camera, Download, Edit, Edit2, FileText, Loader2, Upload, UserCheck, UserPlus, UserX, Video, X } from 'lucide-react';
+import { Camera, Download, Edit2, FileText, Loader2, Upload, Video, X } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../app/redux/store';
 import { useEffect, useRef, useState } from 'react';
-import { fetchUserProfile, followOrUnfollow, User } from '../../app/redux/slices/user/userAuthSlice';
+import { fetchUserProfile, User } from '../../app/redux/slices/user/userAuthSlice';
 import ProfileSkeleton from '../Loading/SkeltonProfileLoading';
 import EditProfile from './EditeProfile';
 import axiosInstance from '@/services/api/userInstance';
@@ -12,6 +12,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@radix-ui/react-dialog';
 import { DialogHeader } from '../ui/dialog';
+import ConnectionButtons from './ConnectionButtons';
+import ConnectionCount from './ConnectionCount';
+import PostsGrid from '../Posts/PostGrid';
+import PostCount from '../Posts/PostCount';
 
 interface ProfileComponentProps {
   username: string;
@@ -19,7 +23,7 @@ interface ProfileComponentProps {
 
 const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
   const dispatch: AppDispatch = useDispatch();
-  const { user, loading, ownAccount, connectionInfo } = useSelector((state: RootState) => state.userAuth);
+  const {  user, loading, ownAccount } = useSelector((state: RootState) => state.userAuth);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [video, setVideo] = useState<string | null>(null);
@@ -47,9 +51,8 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
-  const handleFollowUnfollow = () => {
-    dispatch(followOrUnfollow({ userId2: user.id }));
-  };
+ 
+  
 
   const validateFile = (file: File): boolean => {
     const maxSize = 100 * 1024 * 1024;
@@ -175,19 +178,19 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
               </Button>
 
               <Button
-  onClick={() => {
-    if (user?.resume_url) {
-      window.open(user.resume_url, '_blank');
-    } else {
-      alert('Resume URL is not available.');
-    }
-  }}
-  variant="outline"
-  className="bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
->
-  <Download size={18} className="mr-2 text-blue-400" />
-  Download Resume
-</Button>
+            onClick={() => {
+              if (user?.resume_url) {
+                window.open(user.resume_url, '_blank');
+              } else {
+                alert('Resume URL is not available.');
+              }
+            }}
+            variant="outline"
+            className="bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
+          >
+            <Download size={18} className="mr-2 text-blue-400" />
+            Download Resume
+          </Button>
 
             </div>
 
@@ -246,12 +249,12 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
             </button>
             {ownAccount && (
               <>
-                <button
+                <Button
                   className="p-2 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors"
                   onClick={() => setIsEditModalOpen(true)}
                 >
                   <Edit2 size={20} />
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -373,92 +376,28 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
               </div>
             )}
           </div>
-        )}
-<div className="mt-4 text-sm text-gray-300 flex justify-between items-center">
-      <div className="space-y-1">
-        <p>Lorem Ipsum is simply dummy text of</p>
-        <p>the printing and typesetting industry.</p>
-        <p>Lorem Ipsum</p>
+        )} <div className="bg-secondary rounded-lg flex items-center justify-between shadow-md mt-4 mb-4">
+        <div className="flex-grow pr-4">
+          <h3 className="text-white font-semibold mb-2">About Me</h3>
+          <div className="text-gray-400 text-sm leading-relaxed">
+            <p>Lorem Ipsum is simply dummy text of</p>
+            <p>the printing and typesetting industry.</p>
+            <p>Lorem Ipsum</p>
+          </div>
+        </div>
+        <ConnectionButtons/>
       </div>
-      
-      <div className="flex space-x-3">
-        {ownAccount ? (
-          <button className="text-blue-500 text-sm hover:underline flex items-center">
-            <Edit size={16} className="mr-1" />
-            Edit Bio
-          </button>
-        ) : (
-          <button
-            onClick={() => handleFollowUnfollow()}
-            className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 px-3 py-1 rounded-md cursor-pointer flex items-center"
-          >
-            {connectionInfo ? (
-              connectionInfo.status === "accepted" ? (
-                <>
-                  <UserX size={18} className="mr-2 text-red-400" />
-                  Unfollow
-                </>
-              ) : connectionInfo.status === "pending" ? (
-                <>
-                  <UserCheck size={18} className="mr-2 text-yellow-400" />
-                  Requested
-                </>
-              ) : (
-                <>
-                  <UserPlus size={18} className="mr-2 text-blue-400" />
-                  Follow
-                </>
-              )
-            ) : (
-              <>
-                <UserPlus size={18} className="mr-2 text-blue-400" />
-                Follow
-              </>
-            )}
-          </button>
-        )}
-      </div>
-    </div>
-
-
-
         <div className="flex gap-6 mt-4 text-sm">
-          <div>
-            <span className="font-bold">924</span>
-            <span className="text-gray-400 ml-1">followers</span>
-          </div>
-          <div>
-            <span className="font-bold">736</span>
-            <span className="text-gray-400 ml-1">followings</span>
-          </div>
-          <div>
-            <span className="font-bold">0</span>
-            <span className="text-gray-400 ml-1">posts</span>
-          </div>
+          <ConnectionCount/>
+          <PostCount/>
         </div>
 
         <div className="flex border-b border-gray-800 mt-8">
           <button className="px-4 py-2 text-sm font-medium border-b-2 border-white">
             POSTS
           </button>
-          <button className="px-4 py-2 text-sm font-medium text-gray-400">
-            SAVED
-          </button>
-          <button className="px-4 py-2 text-sm font-medium text-gray-400">
-            TAGS
-          </button>
         </div>
-
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
-            <Camera size={32} className="text-gray-400" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">Share Photos</h3>
-          <p className="text-gray-400 text-sm mb-4">When you share photos they will appear here</p>
-          <button className="text-blue-500 text-sm hover:underline">
-            Share your first photo
-          </button>
-        </div>
+        <PostsGrid/>
       </div>
 
       <EditProfile 

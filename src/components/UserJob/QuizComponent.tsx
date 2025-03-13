@@ -1,8 +1,8 @@
 import axiosInstance from '@/services/api/userInstance';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-
+import { toast } from 'sonner';
+import LoadingScreen from '../Loading/Loading';
 
 interface QuizComponentProps {
   questions: string[]; 
@@ -16,6 +16,7 @@ const QuizComponent: React.FC<QuizComponentProps> = ({ questions, jobId, quizId 
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(120); 
   const [isTimerActive, setIsTimerActive] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
   const currentQuestion = questions[currentQuestionIndex];
@@ -57,17 +58,30 @@ const QuizComponent: React.FC<QuizComponentProps> = ({ questions, jobId, quizId 
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
       console.log("Quiz completed! All answers:", newAnswers);
-      const response = await axiosInstance.post('/job/applyWithAnswers',{answers: newAnswers, jobId, quizId});
-      if(response.data.success) {
-        toast.success("Applied Successfully")
-        navigate('/jobs')
-      } else {
-        toast.info("Something went wrong. Please Try Again!")
-        navigate('/jobs')
+      setIsLoading(true);
+      try {
+        const response = await axiosInstance.post('/job/applyWithAnswers', {
+          answers: newAnswers, 
+          jobId, 
+          quizId
+        });
+        
+        console.log("Response after applying for job:", response);
+        if(response.data.success) {
+          toast.success("Applied Successfully");
+          navigate('/');
+        } else {
+          toast.info("Something went wrong. Please Try Again!");
+          navigate('/');
+        }
+      } catch (error) {
+        console.error("Error applying for job:", error);
+        toast.error("Failed to apply for job. Please try again later.");
+        navigate('/');
+      } finally {
+        setIsLoading(false);
+        setIsTimerActive(false);
       }
-      console.log("Response after applying for job:", response);
-
-      setIsTimerActive(false);
     }
   };
 
@@ -80,19 +94,42 @@ const QuizComponent: React.FC<QuizComponentProps> = ({ questions, jobId, quizId 
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
       console.log("Quiz completed! All answers:", newAnswers);
-      const response = await axiosInstance.post('/job/applyWithAnswers', { answers: newAnswers, jobId, quizId });
-      console.log("Response after applying for job:", response);
-  
-      setIsTimerActive(false);
+      setIsLoading(true);
+      try {
+        const response = await axiosInstance.post('/job/applyWithAnswers', { 
+          answers: newAnswers, 
+          jobId, 
+          quizId 
+        });
+        
+        console.log("Response after applying for job:", response);
+        if(response.data.success) {
+          toast.success("Applied Successfully");
+          navigate('/');
+        } else {
+          toast.info("Something went wrong. Please Try Again!");
+          navigate('/');
+        }
+      } catch (error) {
+        console.error("Error applying for job:", error);
+        toast.error("Failed to apply for job. Please try again later.");
+        navigate('/');
+      } finally {
+        setIsLoading(false);
+        setIsTimerActive(false);
+      }
     }
   };
   
-
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-secondary">

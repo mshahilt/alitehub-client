@@ -174,7 +174,7 @@ const CompanyProfile: React.FC<CompanyProfileProps> = ({ companyIdentifier }) =>
   return (
     <div className="max-w-4xl mx-auto text-white bg-secondary">
       <div className="relative">
-        <div className="h-40 w-full bg-gradient-to-r from-indigo-600 to-indigo-300 rounded-t-lg" />
+        <div className="h-40 w-full bg-gradient-to-r from-gray-600 to-gray-300 rounded-t-lg" />
         <div className="absolute -bottom-16 left-8">
           <div className="w-32 h-32 rounded-lg border-4 border-[#1a1a2e] bg-gray-200 overflow-hidden">
             <ProfileImage 

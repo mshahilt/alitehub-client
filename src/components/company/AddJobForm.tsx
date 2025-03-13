@@ -19,12 +19,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, Send, Trash2, Wand2, Loader2 } from 'lucide-react';
 import AddQuizForJob from './AddQuizForJob';
 import { useDispatch, useSelector } from 'react-redux';
-import { toast } from 'react-toastify';
+import { toast } from "sonner";
 import { AppDispatch, RootState } from '@/app/redux/store';
-import { removeQuestion } from '@/app/redux/slices/company/quizSlice';
-import { GenerateAiQuestion } from '@/app/redux/slices/company/quizSlice';
+import { removeQuestion, setQuestions, GenerateAiQuestion } from '@/app/redux/slices/company/quizSlice';
 import axiosInstance from '@/services/api/userInstance';
 import { getCompany } from '@/app/redux/slices/company/companyAuthSlice';
+
 
 type FormData = {
   jobTitle: string;
@@ -40,15 +40,20 @@ type FormData = {
   skills: string[];
 };
 
-const AddJobForm: React.FC = () => {
+type AddJobFormProps = {
+  usage: "edit" | "add";
+  jobId?: string;
+};
+
+const AddJobForm: React.FC<AddJobFormProps> = ({ usage, jobId }) => {
   const dispatch = useDispatch<AppDispatch>();
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [newSkill, setNewSkill] = useState("");
   const [newResponsibility, setNewResponsibility] = useState("");
   const [newQualification, setNewQualification] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const questions = useSelector((state: RootState) => state.companyQuiz.questions);
-
   
   const [formData, setFormData] = useState<FormData>({
     jobTitle: '',
@@ -66,19 +71,53 @@ const AddJobForm: React.FC = () => {
 
   useEffect(() => {
     const fetchCompany = async () => {
+      try {
         const response = await dispatch(getCompany());
         if (response.meta.requestStatus === "fulfilled") {
-            const payload = response.payload as { name: string, id: string }; 
-            setFormData(prevFormData => ({
-                ...prevFormData,
-                companyId: payload.id,
-                company: payload.name
-            }));
+          const payload = response.payload as { name: string, id: string }; 
+          setFormData(prevFormData => ({
+            ...prevFormData,
+            companyId: payload.id,
+            company: payload.name
+          }));
         }
+      } catch (error) {
+        console.error("Error fetching company data:", error);
+        toast.error("Failed to fetch company data");
+      }
     };
+    
     fetchCompany();
-}, [dispatch]);
+  }, [dispatch]);
 
+  useEffect(() => {
+    const fetchJobData = async () => {
+      if (usage === "edit" && jobId) {
+        try {
+          setIsLoading(true);
+          const response = await axiosInstance.get(`/job/${jobId}`);
+          
+          setFormData(response.data.job);
+
+          const quizQuestions = await axiosInstance.get(`/job/quiz/${jobId}`);
+          console.log(quizQuestions.data.quiz.questions);
+          console.log(quizQuestions.data.quiz.questions.length);
+          if (quizQuestions.data.quiz.questions.length > 0) {
+            console.log("response.data.quiz.questions", quizQuestions.data.quiz.questions);
+            dispatch(setQuestions(quizQuestions.data.quiz.questions));
+          }
+          
+        } catch (error) {
+          console.error("Error fetching job  data:", error);
+          toast.error("Failed to fetch job data");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    fetchJobData();
+  }, [usage, jobId, dispatch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -156,18 +195,41 @@ const AddJobForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if(questions.length === 0) {
-      toast.warn('Please add screening question');
+      toast.info('Please add screening questions');
       return;
     }
-    const response = await axiosInstance.post('/job/add', {
-        jobDetails: formData,
-        screeningQuiz: questions
-    })
-
-    console.log(response);
-    toast.success("Job added successfully");
-    console.log("job questions", questions);
-    console.log('Form submitted:', formData);
+    
+    try {
+      setIsLoading(true);
+      let response;
+      
+      if (usage === "add") {
+        response = await axiosInstance.post('/job/add', {
+          jobDetails: formData,
+          screeningQuiz: questions
+        });
+        toast.success("Job added successfully");
+      } else {
+        console.log("Update called")
+        // Edit existing job
+        response = await axiosInstance.put(`/job/update/${jobId}`, {
+          jobDetails: formData,
+        });
+        toast.success("Job updated successfully");
+      }
+      
+      console.log(response);
+      console.log("job questions", questions);
+      console.log('Form submitted:', formData);
+      
+      // Optionally, redirect to job listings or job details page after successful submission
+      // For example: navigate('/jobs');
+    } catch (error) {
+      console.error("Error submitting job:", error);
+      toast.error(usage === "add" ? "Failed to add job" : "Failed to update job");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRemoveQuestion = (id: string) => {
@@ -195,11 +257,24 @@ const AddJobForm: React.FC = () => {
     }));
   };
 
+  if (usage === "edit" && isLoading && !formData.jobTitle) {
+    return (
+      <div className="min-h-screen bg-primary flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="w-12 h-12 text-white animate-spin" />
+          <p className="text-white text-lg">Loading job details...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
     <div className="min-h-screen bg-primary p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-6">Create New Position</h1>
+        <h1 className="text-3xl font-bold text-white mb-6">
+          {usage === "add" ? "Create New Position" : "Edit Position"}
+        </h1>
 
         <Card className="bg-secondary border-0 shadow-2xl backdrop-blur-sm">
           <CardHeader className="border-b border-primary/10">
@@ -267,10 +342,10 @@ const AddJobForm: React.FC = () => {
                     <PlusCircle onClick={handleAddResponsibility} className="w-5 h-5 text-white cursor-pointer" />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {formData.responsibilities.length > 0 &&
-                      formData.responsibilities.map((responsibility) => (
+                    {formData.responsibilities?.length > 0 &&
+                      formData.responsibilities.map((responsibility, index) => (
                         <div 
-                          key={responsibility} 
+                          key={`${responsibility}-${index}`}
                           className="flex items-center gap-2 bg-primary/40 text-white px-3 py-1 rounded-lg"
                         >
                           <p className="text-white/70">{responsibility}</p>
@@ -296,10 +371,10 @@ const AddJobForm: React.FC = () => {
                     <PlusCircle onClick={handleAddQualification} className="w-5 h-5 text-white cursor-pointer" />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {formData.qualifications.length > 0 &&
-                      formData.qualifications.map((qualification) => (
+                    {formData.qualifications?.length > 0 &&
+                      formData.qualifications.map((qualification, index) => (
                         <div 
-                          key={qualification} 
+                          key={`${qualification}-${index}`}
                           className="flex items-center gap-2 bg-primary/40 text-white px-3 py-1 rounded-lg"
                         >
                           <p className="text-white/70">{qualification}</p>
@@ -365,10 +440,10 @@ const AddJobForm: React.FC = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white/80">Skills</label>
                 <div className="flex flex-wrap gap-2">
-                  {formData.skills.length > 0 &&
-                    formData.skills.map((skill) => (
+                  {formData.skills?.length > 0 &&
+                    formData.skills.map((skill, index) => (
                       <div 
-                        key={skill} 
+                        key={`${skill}-${index}`}
                         className="flex items-center gap-2 bg-primary/40 text-white px-3 py-1 rounded-lg"
                       >
                         <p className="text-white/70">{skill}</p>
@@ -462,9 +537,19 @@ const AddJobForm: React.FC = () => {
               type="submit" 
               onClick={(e) => handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>)}
               className="bg-blue-500 hover:bg-blue-600 text-white"
+              disabled={isLoading}
             >
-              <Send className="w-4 h-4 mr-2" />
-              Post Job
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {usage === "add" ? "Posting..." : "Updating..."}
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  {usage === "add" ? "Post Job" : "Update Job"}
+                </>
+              )}
             </Button>
           </CardFooter>
         </Card>

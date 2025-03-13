@@ -123,7 +123,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordProps> = ({ formFor }) => {
         <div>
             {/* Main Email Form */}
             <main id="content" role="main" className="w-full max-w-md mx-auto p-6">
-                <div className="mt-7 bg-secondary rounded-xl shadow-lg border-2 border-indigo-300">
+                <div className="mt-7 bg-secondary rounded-xl shadow-lg border-2 border-gray-300">
                     <div className="p-4 sm:p-7">
                         <div className="text-center">
                             <h1 className="block text-2xl font-bold text-gray-800 dark:text-white">

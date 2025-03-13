@@ -18,6 +18,11 @@ import CompanyAddNewJobPage from "./page/Company/CompanyAddNewJobPage";
 import JobManagement from "./page/Company/JobManagement";
 import CompanyApplicationsPage from "./page/Company/CompanyApplicationsPage";
 import Jobs from "./page/User/Jobs";
+import CompanyApplicationDetailPage from "./page/Company/CompanyApplicationDetailPage";
+import UserApplicationDetailPage from "./page/User/ApplicationDetails";
+import InterviewPage from "./page/User/InterviewPage";
+import CompanyInterviewPage from "./page/Company/CompanyInterviewPage";
+import CompanyEditJobPage from "./page/Company/CompanyEditJobPage";
 import Job from "./page/User/Job";
 import Application from "./page/User/Applications"
 import ResumeBuilder from "./page/User/CreateResume";
@@ -29,6 +34,7 @@ import { useEffect } from "react";
 import { io } from "socket.io-client";
 import { useSelector } from "react-redux";
 import { RootState } from "./app/redux/store";
+import Message from "./page/User/Message";
 
 const socket = io("http://localhost:5000", { withCredentials:  true });
 
@@ -68,13 +74,19 @@ const App = () => {
           <Route path="/add-post" element={<ProtectedRoute element={<AddPost />} requiredRole="user" />} />
           <Route path="/jobs" element={<ProtectedRoute element={<Jobs />} requiredRole="user" />} />
           <Route path="/search" element={<ProtectedRoute element={<Search />} requiredRole="user" />} />
+          <Route path="/message" element={<ProtectedRoute element={<Message />} requiredRole="user" />} />
           <Route path="/jobs/:jobId" element={<ProtectedRoute element={<Job />} requiredRole="user" />} />
+          <Route path="/application/:id" element={<ProtectedRoute element={<UserApplicationDetailPage />} requiredRole="user" />} />
+          <Route path="/interview/:roomId" element={<ProtectedRoute element={<InterviewPage />} requiredRole="user" />} />
+          <Route path="/company/interview/:roomId" element={<ProtectedRoute element={<CompanyInterviewPage />} requiredRole="company" />} />
           <Route path="/" element={<ProtectedRoute element={<Home />} requiredRole="user" />} />
           <Route path="/applications" element={<ProtectedRoute element={<Application />} requiredRole="user" />} />
           <Route path="/company" element={<ProtectedRoute element={<CompanyHomePage />} requiredRole="company" />} />
           <Route path="/company/jobs/add" element={<ProtectedRoute element={<CompanyAddNewJobPage />} requiredRole="company" />} />
           <Route path="/company/jobs" element={<ProtectedRoute element={<JobManagement />} requiredRole="company" />} />
+          <Route path="/company/job/edit/:jobId" element={<ProtectedRoute element={<CompanyEditJobPage />} requiredRole="company" />} />
           <Route path="/company/applications" element={<ProtectedRoute element={<CompanyApplicationsPage />} requiredRole="company" />} />
+          <Route path="/company/application/:id" element={<ProtectedRoute element={< CompanyApplicationDetailPage/>} requiredRole="company" />} />
           <Route path="/:username" element={<ProtectedRoute element={<Profile />} requiredRole="user" />} />
           <Route path="/company/:companyIdentifier" element={<ProtectedRoute element={<CompanyProfilePage />} requiredRole="company" />} />
 
