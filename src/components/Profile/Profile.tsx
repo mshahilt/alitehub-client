@@ -2,7 +2,7 @@ import { Camera, Download, Edit2, FileText, Loader2, Upload, Video, X } from 'lu
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../app/redux/store';
 import { useEffect, useRef, useState } from 'react';
-import { fetchUserProfile, User } from '../../app/redux/slices/user/userAuthSlice';
+import { fetchUserProfile } from '../../app/redux/slices/user/userAuthSlice';
 import ProfileSkeleton from '../Loading/SkeltonProfileLoading';
 import EditProfile from './EditeProfile';
 import axiosInstance from '@/services/api/userInstance';
@@ -35,7 +35,8 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
-  const handleSave = async (user: User) => {
+  const handleSave = async (userData: any) => {
+    console.log("userData", userData)
     const response = await axiosInstance.post('/updateProfile', user);
     console.log(response);
   };
@@ -404,7 +405,7 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
         onClose={() => setIsEditModalOpen(false)} 
         isOpen={isEditModalOpen} 
         user={user} 
-        onSave={handleSave}
+        onSave={handleSave as (userData: any) => Promise<void>}
       />
     </div>
   );  

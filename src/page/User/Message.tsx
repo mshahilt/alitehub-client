@@ -8,7 +8,7 @@ import Messages from '@/components/Message/Messages';
 
 const Message = () => {
     const [isExpanded, setIsExpanded] = useState(true);
-    const [selectedChat, setSelectedChat] = useState(null);
+    const [selectedChat] = useState(null);
     const { existingUser } = useSelector((state: RootState) => state.userAuth);
     const userSidebarItems = getUserMenuItems(existingUser?.username);
 

@@ -29,7 +29,7 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: Partial<UserProfile>;
-  onSave: (userData: UserProfile) => Promise<void>;
+  onSave: (userData: Partial<UserProfile>) => Promise<void>;
 }
 
 interface Skill {

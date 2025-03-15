@@ -40,6 +40,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordProps> = ({ formFor }) => {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
+        console.log("userData", userData)
         e.preventDefault();
         
         if (!validateEmail(email)) {
