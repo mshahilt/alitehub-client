@@ -66,6 +66,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
 
   // Load image
   useEffect(() => {
+    console.log(originalAspectRatio);
     const img = new Image();
     img.src = imageSrc;
     img.crossOrigin = "Anonymous";
