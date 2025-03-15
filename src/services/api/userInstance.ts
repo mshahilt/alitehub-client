@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from "axios";
 import { setupInterceptors } from "./interceptor";
 
 const axiosInstance: AxiosInstance = axios.create({
-    baseURL: "http://localhost:5000/",
+    baseURL: "https://fd92-103-170-228-58.ngrok-free.app/",
     headers: {
         "Content-Type": "application/json",
     },

@@ -2,20 +2,21 @@ class WebRTCHandler {
   peerConnection: RTCPeerConnection;
   private localStream: MediaStream | null = null;
   private remoteStream: MediaStream = new MediaStream();
-  private sendSignal: (event: string, data: any) => void;
+  private sendSignal: (event: string, data: any) => Promise<void>;
   private audioTrack: MediaStreamTrack | null = null;
   private videoTrack: MediaStreamTrack | null = null;
 
-  constructor(sendSignal: (event: string, data: any) => void) {
+  constructor(sendSignal: (event: string, data: any) => Promise<void>) {
     this.peerConnection = new RTCPeerConnection({
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
-        { 
-          urls: 'turn:numb.viagenie.ca',
-          credential: 'muazkh',
-          username: 'webrtc@live.com'
-        }
+        // Replace with your own TURN server if needed
+        {
+          urls: "turn:numb.viagenie.ca",
+          credential: "muazkh",
+          username: "webrtc@live.com",
+        },
       ],
     });
 
@@ -23,71 +24,84 @@ class WebRTCHandler {
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        this.sendSignal("ice-candidate", event.candidate);
+        this.sendSignal("ice-candidate", event.candidate).catch((error) =>
+          console.error("Failed to send ICE candidate:", error)
+        );
       }
     };
 
     this.peerConnection.ontrack = (event) => {
-      console.log("Remote track received:", event.track.kind);
+      console.log("Received remote track:", event.track.kind);
       this.remoteStream.addTrack(event.track);
     };
 
     this.peerConnection.oniceconnectionstatechange = () => {
-      console.log("ICE connection state:", this.peerConnection.iceConnectionState);
+      const state = this.peerConnection.iceConnectionState;
+      console.log("ICE connection state:", state);
     };
   }
 
-  async getLocalStream() {
+  async initializeLocalStream() {
+    if (this.localStream) return this.localStream;
+
     try {
       this.localStream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true,
       });
 
+      if (!this.localStream.getTracks().length) {
+        throw new Error("No tracks available in local stream");
+      }
+
       this.localStream.getTracks().forEach((track) => {
-        if (this.localStream) {
-          if (track.kind === 'audio') {
-            this.audioTrack = track;
-          } else if (track.kind === 'video') {
-            this.videoTrack = track;
-          }
-          this.peerConnection.addTrack(track, this.localStream);
-        }
+        console.log(`Adding ${track.kind} track to peerConnection`);
+        if (track.kind === "audio") this.audioTrack = track;
+        else if (track.kind === "video") this.videoTrack = track;
+        this.peerConnection.addTrack(track, this.localStream!);
       });
 
       return this.localStream;
     } catch (error) {
-      console.error("Error getting local stream:", error);
+      console.error("Error initializing local stream:", error);
       throw error;
     }
   }
 
   async createOffer() {
     try {
+      await this.initializeLocalStream();
       const offer = await this.peerConnection.createOffer();
       await this.peerConnection.setLocalDescription(offer);
-      this.sendSignal("offer", offer);
+      await this.sendSignal("offer", offer);
+      console.log("Offer created and sent");
     } catch (error) {
       console.error("Error creating offer:", error);
+      throw error;
     }
   }
 
   async createAnswer(offer: RTCSessionDescriptionInit) {
     try {
+      await this.initializeLocalStream();
       await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await this.peerConnection.createAnswer();
       await this.peerConnection.setLocalDescription(answer);
-      this.sendSignal("answer", answer);
+      await this.sendSignal("answer", answer);
+      console.log("Answer created and sent");
     } catch (error) {
       console.error("Error creating answer:", error);
+      throw error;
     }
   }
 
   async handleAnswer(answer: RTCSessionDescriptionInit) {
     try {
       await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+      console.log("Answer handled successfully");
     } catch (error) {
       console.error("Error handling answer:", error);
+      throw error;
     }
   }
 
@@ -95,6 +109,7 @@ class WebRTCHandler {
     try {
       if (candidate) {
         await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        console.log("ICE candidate added");
       }
     } catch (error) {
       console.error("Error adding ICE candidate:", error);
@@ -104,6 +119,7 @@ class WebRTCHandler {
   toggleAudio() {
     if (this.audioTrack) {
       this.audioTrack.enabled = !this.audioTrack.enabled;
+      console.log("Audio toggled:", this.audioTrack.enabled);
       return this.audioTrack.enabled;
     }
     return false;
@@ -112,6 +128,7 @@ class WebRTCHandler {
   toggleVideo() {
     if (this.videoTrack) {
       this.videoTrack.enabled = !this.videoTrack.enabled;
+      console.log("Video toggled:", this.videoTrack.enabled);
       return this.videoTrack.enabled;
     }
     return false;
@@ -119,36 +136,21 @@ class WebRTCHandler {
 
   async switchCamera(deviceId?: string) {
     if (!this.localStream) return;
-    
-    // Stop current video track
-    this.localStream.getVideoTracks().forEach(track => track.stop());
-    
-    // Get new video track
+
     try {
+      this.localStream.getVideoTracks().forEach((track) => track.stop());
       const newStream = await navigator.mediaDevices.getUserMedia({
-        video: deviceId ? { deviceId: { exact: deviceId } } : true
+        video: deviceId ? { deviceId: { exact: deviceId } } : true,
       });
-      
       const newVideoTrack = newStream.getVideoTracks()[0];
       this.videoTrack = newVideoTrack;
-      
-      // Replace track in peer connection
-      const senders = this.peerConnection.getSenders();
-      const videoSender = senders.find(sender => 
-        sender.track && sender.track.kind === 'video'
-      );
-      
-      if (videoSender) {
-        await videoSender.replaceTrack(newVideoTrack);
-      }
-      
-      // Replace track in local stream
-      const oldVideoTracks = this.localStream.getVideoTracks();
-      if (oldVideoTracks.length > 0) {
-        this.localStream.removeTrack(oldVideoTracks[0]);
-      }
+
+      const sender = this.peerConnection.getSenders().find((s) => s.track?.kind === "video");
+      if (sender) await sender.replaceTrack(newVideoTrack);
+
+      this.localStream.getVideoTracks().forEach((track) => this.localStream!.removeTrack(track));
       this.localStream.addTrack(newVideoTrack);
-      
+      console.log("Camera switched");
       return this.localStream;
     } catch (error) {
       console.error("Error switching camera:", error);
@@ -158,36 +160,21 @@ class WebRTCHandler {
 
   async switchAudioDevice(deviceId: string) {
     if (!this.localStream) return;
-    
-    // Stop current audio track
-    this.localStream.getAudioTracks().forEach(track => track.stop());
-    
-    // Get new audio track
+
     try {
+      this.localStream.getAudioTracks().forEach((track) => track.stop());
       const newStream = await navigator.mediaDevices.getUserMedia({
-        audio: { deviceId: { exact: deviceId } }
+        audio: { deviceId: { exact: deviceId } },
       });
-      
       const newAudioTrack = newStream.getAudioTracks()[0];
       this.audioTrack = newAudioTrack;
-      
-      // Replace track in peer connection
-      const senders = this.peerConnection.getSenders();
-      const audioSender = senders.find(sender => 
-        sender.track && sender.track.kind === 'audio'
-      );
-      
-      if (audioSender) {
-        await audioSender.replaceTrack(newAudioTrack);
-      }
-      
-      // Replace track in local stream
-      const oldAudioTracks = this.localStream.getAudioTracks();
-      if (oldAudioTracks.length > 0) {
-        this.localStream.removeTrack(oldAudioTracks[0]);
-      }
+
+      const sender = this.peerConnection.getSenders().find((s) => s.track?.kind === "audio");
+      if (sender) await sender.replaceTrack(newAudioTrack);
+
+      this.localStream.getAudioTracks().forEach((track) => this.localStream!.removeTrack(track));
       this.localStream.addTrack(newAudioTrack);
-      
+      console.log("Audio device switched");
       return this.localStream;
     } catch (error) {
       console.error("Error switching audio device:", error);
@@ -198,13 +185,13 @@ class WebRTCHandler {
   async getAvailableDevices() {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameras = devices.filter(device => device.kind === 'videoinput');
-      const microphones = devices.filter(device => device.kind === 'audioinput');
-      const speakers = devices.filter(device => device.kind === 'audiooutput');
-      
-      return { cameras, microphones, speakers };
+      return {
+        cameras: devices.filter((d) => d.kind === "videoinput"),
+        microphones: devices.filter((d) => d.kind === "audioinput"),
+        speakers: devices.filter((d) => d.kind === "audiooutput"),
+      };
     } catch (error) {
-      console.error("Error getting available devices:", error);
+      console.error("Error getting devices:", error);
       throw error;
     }
   }
@@ -215,9 +202,10 @@ class WebRTCHandler {
 
   closeConnection() {
     if (this.localStream) {
-      this.localStream.getTracks().forEach(track => track.stop());
+      this.localStream.getTracks().forEach((track) => track.stop());
     }
     this.peerConnection.close();
+    console.log("Connection closed");
   }
 }
 

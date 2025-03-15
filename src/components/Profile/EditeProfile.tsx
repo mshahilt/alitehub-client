@@ -365,7 +365,13 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
               <div className="mt-6">
                 <h3 className="text-sm font-medium mb-2">{userData.resume_url ? "Resume" : "Upload Resume (PDF)"}</h3>
                 <div className="border border-white/20 rounded-lg p-4 text-center">
-                  {userData.resume_url && <iframe src={userData.resume_url} className="w-full h-32 border rounded mb-3" title="Resume Preview" />}
+                {userData.resume_url && (
+                  <iframe
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(userData.resume_url)}&embedded=true`}
+                    className="w-full h-32 border rounded mb-3"
+                    title="Resume Preview"
+                  />
+                )}
                   <input type="file" id="resume" className="hidden" accept="application/pdf" onChange={handleResumeSelect} />
                   <label htmlFor="resume" className="flex items-center justify-center gap-2 cursor-pointer p-2 bg-secondary/50 rounded-md hover:bg-secondary/80 transition-colors">
                     <FileText className="w-5 h-5" />
@@ -451,7 +457,6 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
           </ScrollArea>
         </Tabs>
 
-        {/* Resume Upload Dialog */}
         <Dialog open={resumeDialog.isOpen} onOpenChange={(open) => {
           if (!open) {
             URL.revokeObjectURL(selectedResume?.preview || '');
