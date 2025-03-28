@@ -1,44 +1,63 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { login, register, generateOtp, googleLogin } from "../../../../services/api/auth/authApi";
+import { login, googleLogin } from "../../../../services/api/auth/authApi";
 import axiosInstance from "../../../../services/api/userInstance";
 import axios from "axios";
 
 export interface Company {
+  id: string;
   name: string;
   email: string;
+  companyIdentifier: string;
   industry: string;
   companyType: string;
-  companyIdentifier: string;
-  contact?: {
+  contact: {
     phone?: string | null;
   };
-  profile_picture?: string | null;
+  profile_picture?: string;
   locations?: string[] | null;
+  isBlock: boolean;
+  subscriptionDetails?: {
+    _id: string;
+    companyId: string;
+    stripeCustomerId: string;
+    stripeSubscriptionId: string;
+    stripePriceId: string;
+    status: string;
+    currentPeriodStart: string;
+    currentPeriodEnd: string;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
 }
 
 export interface CompanyAuthState {
   company: Company | null;
-  ownAcc: boolean;
-  loading: boolean;
-  error: string | null;
+  loading: boolean 
+  fetchedCompanyProfile: {
+    data: Company | null;
+    ownAcc: boolean;
+    loading: boolean;
+    error: string | null;
+  };
+  login: {
+    loading: boolean;
+    error: string | null;
+  };
 }
 
 const initialState: CompanyAuthState = {
-  company: {
-    name: "",
-    email: "",
-    industry: "",
-    companyType: "",
-    companyIdentifier: "",
-    contact: {
-      phone: null
-    },
-    profile_picture:null,
-    locations: null
-  },
-  ownAcc: false,
+  company: null,
   loading: false,
-  error: null
+  fetchedCompanyProfile: {
+    data: null,
+    ownAcc: false,
+    loading: false,
+    error: null
+  },
+  login: {
+    loading: false,
+    error: null
+  }
 };
 
 export const fetchCompanyProfile = createAsyncThunk(
@@ -56,19 +75,23 @@ export const fetchCompanyProfile = createAsyncThunk(
   }
 );
 
-export const getCompany = createAsyncThunk<Company>(
+export const getCompany = createAsyncThunk(
   "company/getCompany",
   async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(`/company/getCompany`);
-      console.log("from getcompany",response.data);
-      if(response.data.company.isBlock){
+      const companyData = {
+        ...response.data.company,
+        subscriptionDetails: response.data.subscriptionDetails || null
+      };
+      
+      if (companyData.isBlock) {
         alert("Company blocked by admin");
         localStorage.removeItem("token");
         window.location.href = "/company/login";
         return rejectWithValue("Admin is blocked");
       }
-      return response.data.company;
+      return companyData;
     } catch (error) {
       return rejectWithValue(axios.isAxiosError(error) ? error.response?.data : error);
     }
@@ -80,10 +103,7 @@ export const updateCompanyProfilePicture = createAsyncThunk(
   async (imageFile: File, { rejectWithValue }) => {
     try {
       const formData = new FormData();
-      console.log("imageFile", imageFile);
       formData.append('profileImage', imageFile);
-
-      console.log("formData", formData);
 
       const response = await axiosInstance.post('/company/uploadProfileImage', formData, {
         headers: {
@@ -91,20 +111,16 @@ export const updateCompanyProfilePicture = createAsyncThunk(
         },
       });
 
-      console.log("upload profile", response);
-
       if (!response) {
         throw new Error('Failed to upload image');
       }
 
-      return response.data; 
+      return response.data;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
   }
 );
-
-
 
 const companyAuthSlice = createSlice({
   name: "companyAuth",
@@ -115,89 +131,100 @@ const companyAuthSlice = createSlice({
       action: PayloadAction<{ field: keyof Company; value: any }>
     ) => {
       const { field, value } = action.payload;
-      if (state.company) {
-        state.company[field] = value;
+      if (state.fetchedCompanyProfile.data) {
+        (state.fetchedCompanyProfile.data[field] as any) = value;
       }
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(login.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(login.fulfilled, (state, action: PayloadAction<Company>) => {
-      state.loading = false;
-      state.company = action.payload;
-    });
-    builder.addCase(login.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.error.message || "Login failed";
-    });
+    builder
+      .addCase(login.pending, (state) => {
+        state.login.loading = true;
+        state.loading = true; // Set company loading true
+        state.login.error = null;
+      })
+      .addCase(login.fulfilled, (state, action: PayloadAction<Company>) => {
+        state.login.loading = false;
+        state.loading = false; // Set company loading false
+        state.company = action.payload;
+      })
+      .addCase(login.rejected, (state, action) => {
+        state.login.loading = false;
+        state.loading = false; // Set company loading false
+        state.login.error = action.error.message || "Login failed";
+      });
 
-    builder.addCase(register.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(register.fulfilled, (state, action: PayloadAction<Company>) => {
-      state.loading = false;
-      state.company = action.payload;
-    });
-    builder.addCase(register.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.error.message || "Registration failed";
-    });
+    builder
+      .addCase(googleLogin.pending, (state) => {
+        state.login.loading = true;
+        state.loading = true; // Set company loading true
+        state.login.error = null;
+      })
+      .addCase(googleLogin.fulfilled, (state, action: PayloadAction<Company>) => {
+        state.login.loading = false;
+        state.loading = false; // Set company loading false
+        state.company = action.payload;
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.login.loading = false;
+        state.loading = false; // Set company loading false
+        state.login.error = action.error.message || "Google login failed";
+      });
 
-    builder.addCase(generateOtp.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(generateOtp.fulfilled, (state) => {
-      state.loading = false;
-      state.error = null;
-    });
-    builder.addCase(generateOtp.rejected, (state, action) => {
-      state.loading = false;
-      state.error = typeof action.payload === "string" ? action.payload : "OTP generation failed";
-    });
+    builder
+      .addCase(fetchCompanyProfile.pending, (state) => {
+        state.fetchedCompanyProfile.loading = true;
+        state.fetchedCompanyProfile.error = null;
+      })
+      .addCase(fetchCompanyProfile.fulfilled, (state, action) => {
+        state.fetchedCompanyProfile.loading = false;
+        state.fetchedCompanyProfile.data = {
+          ...action.payload.company,
+          subscriptionDetails: action.payload.subscriptionDetails || null
+        };
+        state.fetchedCompanyProfile.ownAcc = action.payload.company.id === state.company?.id;
+        state.fetchedCompanyProfile.error = null;
+      })
+      .addCase(fetchCompanyProfile.rejected, (state, action) => {
+        state.fetchedCompanyProfile.loading = false;
+        state.fetchedCompanyProfile.error = action.payload as string;
+      });
 
-    builder.addCase(googleLogin.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(googleLogin.fulfilled, (state, action: PayloadAction<Company>) => {
-      state.loading = false;
-      state.company = action.payload;
-    });
-    builder.addCase(googleLogin.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.error.message || "Google login failed";
-    });
-    builder.addCase(fetchCompanyProfile.pending, (state) => {
-            state.loading = true;
-            state.error = null;
-          })
-    builder.addCase(fetchCompanyProfile.fulfilled, (state, action) => {
-            state.loading = false;
-            state.company = action.payload.user;
-            state.ownAcc = action.payload.ownUserAcc
-            state.error = null;
-          })
-    builder.addCase(fetchCompanyProfile.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.payload as string;
-          })
-    builder.addCase(getCompany.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(getCompany.fulfilled, (state, action: PayloadAction<Company>) => {
-      state.loading = false;
-      state.company = action.payload;
-    });
-    builder.addCase(getCompany.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload as string;
-    });
+    builder
+      .addCase(getCompany.pending, (state) => {
+        state.fetchedCompanyProfile.loading = true;
+        state.loading = true; // Set company loading true
+        state.fetchedCompanyProfile.error = null;
+      })
+      .addCase(getCompany.fulfilled, (state, action: PayloadAction<Company>) => {
+        state.fetchedCompanyProfile.loading = false;
+        state.loading = false; // Set company loading false
+        state.company = action.payload;
+        state.fetchedCompanyProfile.data = action.payload;
+        state.fetchedCompanyProfile.ownAcc = true;
+      })
+      .addCase(getCompany.rejected, (state, action) => {
+        state.fetchedCompanyProfile.loading = false;
+        state.loading = false; // Set company loading false
+        state.fetchedCompanyProfile.error = action.payload as string;
+      });
+
+    builder
+      .addCase(updateCompanyProfilePicture.pending, (state) => {
+        state.loading = true; // Set company loading true
+      })
+      .addCase(updateCompanyProfilePicture.fulfilled, (state, action) => {
+        state.loading = false; // Set company loading false
+        if (state.company) {
+          state.company.profile_picture = action.payload.profileImage;
+        }
+        if (state.fetchedCompanyProfile.data) {
+          state.fetchedCompanyProfile.data.profile_picture = action.payload.profileImage;
+        }
+      })
+      .addCase(updateCompanyProfilePicture.rejected, (state) => {
+        state.loading = false; // Set company loading false
+      });
   }
 });
 

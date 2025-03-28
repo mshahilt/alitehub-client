@@ -2,7 +2,8 @@ import {
     LayoutDashboard, 
     Search, 
     Users, 
-    Building 
+    Building,
+    CircleDollarSign
 } from 'lucide-react';
 
 interface MenuItem {
@@ -17,6 +18,7 @@ const adminMenuItems: MenuItem[] = [
     { icon: Search, label: 'Search', isActive: false, link: '/admin/search' },
     { icon: Users, label: 'Manage Users', isActive: false, link: '/admin/users' },
     { icon: Building, label: 'Manage Companies', isActive: false, link: '/admin/companies' },
+    { icon: CircleDollarSign, label: 'Manage Plans', isActive: false, link: '/admin/plans' },
 ];
 
 export default adminMenuItems;

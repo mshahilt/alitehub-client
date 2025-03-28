@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import axiosInstance from '@/services/api/userInstance';
+import axios from 'axios';
 
 interface UserProfile {
   id: string;
@@ -69,6 +70,7 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
   const [skillsPopoverOpen, setSkillsPopoverOpen] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof UserProfile | 'submit', string>>>({});
   const [activeTab, setActiveTab] = useState("basic");
+  const [loading, setLoading] = useState(false);
 
   // Debounced fetch skills
   const fetchSkills = useCallback(
@@ -137,12 +139,67 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
     setSkillsPopoverOpen(false);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => handleInputChange('profile_picture', reader.result as string);
-      reader.readAsDataURL(file);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("handleImageUpload triggered"); // Confirm function is called
+    const files = e.target.files;
+    if (!files || files.length === 0) {
+      console.log("No files selected");
+      return;
+    }
+  
+    const file = files[0];
+    console.log("Selected file:", file.name, file.type, file.size); // Detailed file info
+  
+    try {
+      setLoading(true);
+  
+      console.log("Fetching signed URL from /getSignedUploadUrl");
+      const signedUrlResponse = await axiosInstance.get('/getSignedUploadUrl', {
+        params: { resource_type: 'image' },
+      });
+      console.log("Signed URL response:", signedUrlResponse.data);
+  
+      const { signedUrl } = signedUrlResponse.data;
+      if (!signedUrl || !signedUrl.upload_url) {
+        throw new Error("Invalid signed URL response");
+      }
+  
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", signedUrl.api_key);
+      formData.append("timestamp", signedUrl.timestamp.toString());
+      formData.append("signature", signedUrl.signature);
+  
+      const uploadUrl = signedUrl.upload_url;
+      console.log("Uploading to Cloudinary:", uploadUrl);
+      const cloudinaryResponse = await axios.post(uploadUrl, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      console.log("Cloudinary response:", cloudinaryResponse.data);
+  
+      const imageUrl = cloudinaryResponse.data.secure_url;
+      console.log("Extracted imageUrl:", imageUrl);
+  
+      if (imageUrl) {
+        setUserData((prev) => {
+          const newUserData = {
+            ...prev,
+            profile_picture: imageUrl,
+          };
+          console.log("New userData after update:", newUserData); // Log updated state
+          return newUserData;
+        });
+      } else {
+        console.error("Upload failed: No secure_url in response");
+        alert("Failed to upload image to Cloudinary");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Error uploading image to Cloudinary");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -174,8 +231,9 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
       setResumeDialog(prev => ({ ...prev, isUploading: false }));
     }
   };
-
+ 
   const handleSave = async () => {
+    console.log("Profile picture set to:", user);
     if (!validateForm()) {
       setActiveTab('basic');
       return;
@@ -319,20 +377,34 @@ const EditProfile = ({ isOpen, onClose, user, onSave }: ProfileModalProps) => {
 
           <ScrollArea className="flex-1 mt-4 pr-4">
             <TabsContent value="basic" className="space-y-4 mt-2 pb-4">
-              <div className="flex justify-center mb-6">
-                <div className="relative">
-                  <Avatar className="w-28 h-28 ring-2 ring-white/30">
-                    <AvatarImage src={userData.profile_picture ?? ""} />
-                    <AvatarFallback className="bg-secondary"><User className="w-10 h-10 text-gray-300" /></AvatarFallback>
-                  </Avatar>
-                  <label htmlFor="profile-picture">
-                    <input type="file" id="profile-picture" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                    <Button size="icon" variant="secondary" className="absolute -bottom-2 -right-2 rounded-full shadow-lg">
-                      <Upload className="w-4 h-4" />
-                    </Button>
-                  </label>
-                </div>
-              </div>
+            <div className="flex justify-center mb-6">
+    <div className="relative">
+      <Avatar className="w-28 h-28 ring-2 ring-white/30">
+        <AvatarImage src={userData.profile_picture ?? ""} />
+        <AvatarFallback className="bg-secondary">
+          <User className="w-10 h-10 text-gray-300" />
+        </AvatarFallback>
+      </Avatar>
+      <label htmlFor="profile-picture" className="absolute -bottom-2 -right-2 cursor-pointer">
+        <Button
+          size="icon"
+          variant="secondary"
+          className="rounded-full shadow-lg"
+          disabled={loading}
+          asChild
+        >
+          <span>{loading ? <span className="animate-spin">🔄</span> : <Upload className="w-4 h-4" />}</span>
+        </Button>
+        <input
+          type="file"
+          id="profile-picture"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          accept="image/*"
+          onChange={handleImageUpload} 
+        />
+      </label>
+    </div>
+  </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>

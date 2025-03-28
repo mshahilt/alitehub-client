@@ -6,26 +6,11 @@ import getCompanyMenuItems from "../../app/data/companySidebarItems";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../../app/redux/store";
 import { getCompany } from "@/app/redux/slices/company/companyAuthSlice";
-import ProfileSkeleton from "@/components/Loading/SkeltonProfileLoading";
 
 const CompanyProfilePage = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const { companyIdentifier } = useParams(); 
-  const { company, loading } = useSelector((state: RootState) => state.companyAuth) as {
-    company: {
-      name: string;
-      email: string;
-      industry: string;
-      companyType: string;
-      contact?: { phone?: string | null };
-      companyIdentifier: string;
-      profile_picture?: string | null;
-      locations?: string[] | null;
-    };
-    loading: boolean;
-    error: string;
-  };
-
+  const { company } = useSelector((state: RootState) => state.companyAuth);
   const companySidebarItems = getCompanyMenuItems(company?.companyIdentifier);
   const dispatch = useDispatch<AppDispatch>();
 
@@ -47,9 +32,6 @@ const CompanyProfilePage = () => {
     };
   }, []);
 
-  if (loading) {
-    return <ProfileSkeleton />;
-  }
 
   return (
     <div className="flex bg-primary min-h-screen">

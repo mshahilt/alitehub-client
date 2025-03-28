@@ -1,16 +1,17 @@
 import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 interface SubMenuItem {
   label: string;
-  link: string;
+  link?: string;
+  action?: () => void;
 }
 
 interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  link: string;
+  link?: string;
   isActive?: boolean;
   subItems?: SubMenuItem[];
 }
@@ -25,11 +26,20 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ menuItems, isExpanded, setIsExpanded, bgColor }) => {
   const navigate = useNavigate();
   const [hoveredItem, setHoveredItem] = useState<number | null>(null);
-  let timeoutId: NodeJS.Timeout;
+  const timeoutId = useRef<NodeJS.Timeout | null>(null);
 
   const handleToggleSidebar = useCallback(() => {
     setIsExpanded(!isExpanded);
   }, [isExpanded, setIsExpanded]);
+
+  const handleMouseEnter = (index: number) => {
+    if (timeoutId.current) clearTimeout(timeoutId.current);
+    setHoveredItem(index);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutId.current = setTimeout(() => setHoveredItem(null), 200);
+  };
 
   return (
     <div
@@ -58,28 +68,21 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, isExpanded, setIsExpanded,
         <ul className="space-y-2">
           {menuItems.map((item, index) => {
             const Icon = item.icon;
-            const hasSubItems = (item.subItems ?? []).length > 0;
+            const hasSubItems = item.subItems && item.subItems.length > 0;
 
             return (
-              <li
-                key={index}
-                className="relative"
-                onMouseEnter={() => {
-                  clearTimeout(timeoutId);
-                  hasSubItems && setHoveredItem(index);
-                }}
-                onMouseLeave={() => {
-                  timeoutId = setTimeout(() => {
-                    setHoveredItem(null);
-                  }, 200); 
-                }}
-              >
-                {/* Menu Item */}
+              <li key={index} className="relative" onMouseEnter={() => handleMouseEnter(index)} onMouseLeave={handleMouseLeave}>
                 <div
                   role="button"
                   tabIndex={0}
                   aria-expanded={hoveredItem === index}
-                  onClick={() => (hasSubItems ? setHoveredItem(hoveredItem === index ? null : index) : navigate(item.link))}
+                  onClick={() => {
+                    if (hasSubItems) {
+                      setHoveredItem(hoveredItem === index ? null : index);
+                    } else if (item.link) {
+                      navigate(item.link);
+                    }
+                  }}
                   className={`flex items-center p-3 mx-2 rounded-lg cursor-pointer 
                   ${item.isActive ? "text-purple-500" : "text-gray-400"} 
                   hover:bg-purple-900`}
@@ -92,19 +95,21 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems, isExpanded, setIsExpanded,
                   <div
                     className={`absolute ${isExpanded ? "left-full -ml-2" : "left-16"} top-0 z-10 bg-purple-950 
                     rounded-lg shadow-lg py-2 w-48 transition-opacity duration-200`}
-                    onMouseEnter={() => clearTimeout(timeoutId)} // Keep submenu open when hovered
-                    onMouseLeave={() => {
-                      timeoutId = setTimeout(() => {
-                        setHoveredItem(null);
-                      }, 200);
-                    }}
+                    onMouseEnter={() => handleMouseEnter(index)}
+                    onMouseLeave={handleMouseLeave}
                   >
-                    {item.subItems!.map((subItem, subIndex) => (
+                    {item.subItems?.map((subItem, subIndex) => (
                       <div
                         key={subIndex}
                         role="button"
                         tabIndex={0}
-                        onClick={() => navigate(subItem.link)}
+                        onClick={() => {
+                          if (subItem.action) {
+                            subItem.action();
+                          } else if (subItem.link) {
+                            navigate(subItem.link);
+                          }
+                        }}
                         className="block px-4 py-2 text-sm text-gray-300 hover:bg-purple-900 hover:text-white cursor-pointer"
                       >
                         {subItem.label}

@@ -10,6 +10,7 @@ import GenericTable from "@/components/Table/Table";
 import LoadingScreen from "@/components/Loading/Loading";
 import { Button } from "@/components/ui/button";
 import JobDetail from "@/components/UserJob/JobDetail";
+import { toast } from "sonner";
 
 interface Job {
   id: string;
@@ -19,7 +20,6 @@ interface Job {
   postedDate: string;
 }
 
-// Add a more complete job interface to match JobDetail props
 interface DetailedJob {
   id: string;
   jobTitle: string;
@@ -38,6 +38,19 @@ interface DetailedJob {
   skills: string[];
 }
 
+interface SubscriptionDetails {
+  _id: string;
+  companyId: string;
+  stripeCustomerId: string;
+  stripeSubscriptionId: string;
+  stripePriceId: string;
+  status: string;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const JobManagement = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -45,29 +58,42 @@ const JobManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [questions, setQuestions] = useState<{ question: string; type: string; options: string[]; _id: string }[]>([]);
   const [quizId, setQuizId] = useState("");
+  const [subscriptionDetails, setSubscriptionDetails] = useState<SubscriptionDetails | null>(null);
   
   const { company, loading } = useSelector((state: RootState) => state.companyAuth);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   useEffect(() => {
-    dispatch(getCompany());
-    fetchJobs();
+    const fetchInitialData = async () => {
+      try {
+        await dispatch(getCompany());
+        await fetchJobs();
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+        toast("Failed to load company and job information");
+      }
+    };
+
+    fetchInitialData();
   }, [dispatch]);
 
   const fetchJobs = async () => {
     try {
       const response = await axiosInstance.get("/company/job/get");
-      const formattedJobs = response.data.jobs.map((job: any) => ({
+      const formattedJobs = response.data.jobs.jobs.map((job: any) => ({
         id: job.id,
         jobTitle: job.jobTitle,
         status: "Active",
         applicationReceived: job.applicationReceived || 0,
         postedDate: new Date(job.postedDate).toLocaleDateString(),
       }));
+      
       setJobs(formattedJobs);
+      setSubscriptionDetails(response.data.jobs.subscriptionDetails || null);
     } catch (error) {
       console.error("Error fetching jobs:", error);
+      toast.error("Failed to fetch jobs");
     }
   };
 
@@ -80,6 +106,7 @@ const JobManagement = () => {
       setShowModal(true);
     } catch (error) {
       console.error("Error fetching job details:", error);
+      toast.error("Failed to fetch job details");
     }
   };
 
@@ -94,6 +121,16 @@ const JobManagement = () => {
   }, []);
 
   const handleAddJob = () => {
+    const maxJobsAllowed = 5;
+    const currentJobCount = jobs.length;
+
+    if (currentJobCount >= maxJobsAllowed) {
+      if (subscriptionDetails?.status !== "active") {
+        toast("You've reached the maximum number of jobs. Please upgrade your subscription.");
+        navigate("/company/plans");
+        return;
+      }
+    }
     navigate("/company/jobs/add");
   };
 
@@ -115,6 +152,18 @@ const JobManagement = () => {
 
   const companySidebarItems = getCompanyMenuItems(company?.companyIdentifier);
 
+  const getButtonText = () => {
+    const maxJobsAllowed = 5;
+    const currentJobCount = jobs.length;
+
+    if (currentJobCount >= maxJobsAllowed) {
+      return subscriptionDetails?.status === "active" 
+        ? "Add New Job" 
+        : "Subscribe Now";
+    }
+    return "Add New Job";
+  };
+
   return (
     <>
       {loading && <LoadingScreen />}
@@ -122,24 +171,30 @@ const JobManagement = () => {
         <Sidebar menuItems={companySidebarItems} isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
         <div className="flex-1 flex flex-col items-center p-4">
           <div className="w-full max-w-6xl">
+            <Button 
+              className="mb-4 bg-secondary hover:bg-foreground" 
+              onClick={handleAddJob}
+            >
+              {getButtonText()}
+            </Button>
             <GenericTable
               columns={columns}
               data={jobs}
               actions={(job) => (
-                <Button onClick={() => handleJobView(job.id)} className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded">
+                <Button 
+                  onClick={() => handleJobView(job.id)} 
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded"
+                >
                   View Details
                 </Button>
               )}
             />
-            <Button className="mt-4 bg-secondary hover:bg-foreground" onClick={handleAddJob}>
-              Add New Job
-            </Button>
           </div>
         </div>
       </div>
 
       {showModal && selectedJob && (
-        <div className="fixed inset-0  bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="relative w-full max-w-4xl bg-primary rounded-lg shadow-lg">
             <button 
               className="absolute right-2 top-2 text-white bg-gray-800 hover:bg-gray-700 rounded-full p-2"
@@ -148,7 +203,7 @@ const JobManagement = () => {
               ✕
             </button>
             <JobDetail
-            usage="company"
+              usage="company"
               job={selectedJob} 
               handleApply={() => {}} 
               apply={false} 

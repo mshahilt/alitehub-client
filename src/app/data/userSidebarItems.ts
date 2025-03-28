@@ -12,11 +12,12 @@ import {
 interface MenuItem {
     icon: React.ComponentType;
     label: string;
-    link: string;
+    link?: string;
     isActive?: boolean;
     subItems?: {
         label: string;
-        link: string;
+        link?: string;
+        action?: () => void;
     }[];
 }
 
@@ -31,10 +32,13 @@ const getUserMenuItems = (username?: string): MenuItem[] => [
     { 
         icon: MoreHorizontal, 
         label: 'More', 
-        link: '', 
         subItems: [
             { label: 'Build your resume', link: '/build-resume' },
-            { label: 'Add Post', link: '/add-post' }
+            { label: 'Add Post', link: '/add-post' },
+            { label: 'Logout', action: () => {
+                localStorage.removeItem("token");
+                location.reload();
+            }}
         ]
     }
 ];

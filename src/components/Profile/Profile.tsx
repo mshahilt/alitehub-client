@@ -37,11 +37,12 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
   
   const handleSave = async (userData: any) => {
     console.log("userData", userData)
-    const response = await axiosInstance.post('/updateProfile', user);
+    const response = await axiosInstance.post('/updateProfile', userData);
     console.log(response);
   };
   
   useEffect(() => {
+    console.log("to check profile picture",user);
     dispatch(fetchUserProfile(username));
   }, [dispatch, username]);
   
@@ -228,13 +229,13 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
       <div className="relative">
         <div className="h-32 w-full bg-gradient-to-r from-blue-400 to-blue-100 rounded-t-lg"></div>
         <div className="absolute -bottom-16 left-8">
-          <div className="w-32 h-32 rounded-full border-4 border-[#1a1a2e] bg-purple-300 overflow-hidden">
+            <div className="w-32 h-32 rounded-full border-4 border-[#1a1a2e] bg-purple-300 overflow-hidden">
             <img 
-              src="/api/placeholder/128/128" 
+              src={user?.profile_picture || 'https://img.freepik.com/premium-vector/user-circle-with-blue-gradient-circle_78370-4727.jpg'} 
               alt="Profile"
               className="w-full h-full object-cover"
             />
-          </div>
+            </div>
         </div>
       </div>
 

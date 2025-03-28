@@ -366,7 +366,6 @@ const ApplicationDetailPage: React.FC<{ application: Application, userType: "com
             </div>
           </div>
           
-          {/* Right Column - Job Requirements and Interview Scheduling */}
           <div className="md:col-span-1">
             <div className="bg-gray-900 rounded-lg shadow-lg p-6 mb-6">
               <h3 className="font-semibold text-lg mb-4 text-white">Job Requirements</h3>

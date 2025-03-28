@@ -8,10 +8,26 @@ import axiosInstance from '@/services/api/userInstance';
 
 const Jobs = () => {
     const [isExpanded, setIsExpanded] = useState(true);
-    const [jobs, setJobs] = useState<any[]>([]);  
+    const [jobs, setJobs] = useState<any[]>([]);
+    const [applications, setApplications] = useState<any[]>([]);  
+    
 
     const { existingUser } = useSelector((state: RootState) => state.userAuth) 
     const userSidebarItems = getUserMenuItems(existingUser?.username);
+
+    useEffect(() => {
+        const fetchJobApplications = async () => {
+            try {
+                const response = await axiosInstance.get('/application/user');
+                console.log("Fetched applications:", response.data);
+                setApplications(response.data.applications);
+            } catch (error) {
+                console.error("Error fetching jobs:", error);
+            }
+        };
+
+        fetchJobApplications();
+    }, []); 
 
     useEffect(() => {
         const fetchJobs = async () => {
@@ -51,7 +67,7 @@ const Jobs = () => {
             
             <div className="flex-1 min-h-screen ml-auto md:ml-1/4 mr-0 md:mr-1/4 flex justify-center p-1 z-2">
                 <div className="w-full max-w-2xl min-h-screen">
-                 <JobList jobs={jobs} /> 
+                 <JobList jobs={jobs} applications={applications}  /> 
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 const adminAxiosInstance: AxiosInstance = axios.create({
-    baseURL: "https://de13-103-170-228-58.ngrok-free.app/admin",
+    baseURL: "https://api.alitehub.site/admin",
     headers: {
         "Content-Type": "application/json",
     },

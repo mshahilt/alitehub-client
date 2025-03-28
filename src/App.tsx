@@ -35,8 +35,11 @@ import { io } from "socket.io-client";
 import { useSelector } from "react-redux";
 import { RootState } from "./app/redux/store";
 import Message from "./page/User/Message";
+import SubscriptionManagement from "./page/Admin/SubscriptionManagement";
+import CompanySubscriptionPage from "./page/Company/CompanySubscriptionPage";
+import AdminDashboard from "./page/Admin/AdminDashboard";
 
-const socket = io("http://localhost:5000", { withCredentials:  true });
+const socket = io("https://api.alitehub.site", { withCredentials:  true });
 
 
 const App = () => {
@@ -83,6 +86,7 @@ const App = () => {
           <Route path="/applications" element={<ProtectedRoute element={<Application />} requiredRole="user" />} />
           <Route path="/company" element={<ProtectedRoute element={<CompanyHomePage />} requiredRole="company" />} />
           <Route path="/company/jobs/add" element={<ProtectedRoute element={<CompanyAddNewJobPage />} requiredRole="company" />} />
+          <Route path="/company/plans" element={<ProtectedRoute element={<CompanySubscriptionPage />} requiredRole="company" />} />
           <Route path="/company/jobs" element={<ProtectedRoute element={<JobManagement />} requiredRole="company" />} />
           <Route path="/company/job/edit/:jobId" element={<ProtectedRoute element={<CompanyEditJobPage />} requiredRole="company" />} />
           <Route path="/company/applications" element={<ProtectedRoute element={<CompanyApplicationsPage />} requiredRole="company" />} />
@@ -90,8 +94,10 @@ const App = () => {
           <Route path="/:username" element={<ProtectedRoute element={<Profile />} requiredRole="user" />} />
           <Route path="/company/:companyIdentifier" element={<ProtectedRoute element={<CompanyProfilePage />} requiredRole="company" />} />
 
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/companies" element={<CompanyManagement />} />
+          <Route path="/admin/plans" element={<SubscriptionManagement />} />
         </Routes>
       </BrowserRouter>
     </>

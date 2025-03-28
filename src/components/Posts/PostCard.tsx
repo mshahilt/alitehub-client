@@ -292,7 +292,6 @@ const PostCard = () => {
             <div className="flex items-center gap-4 mb-3 text-xs sm:text-sm text-gray-400">
               <span>{postLikeData.count} Likes</span>
               <span>{commentCount} Comments</span>
-              <span>20 Shares</span>
             </div>
 
             <div className="flex items-center justify-between border-t border-gray-700 pt-3">

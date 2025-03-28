@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { AppDispatch } from "../../../app/redux/store";
 import { login, googleLogin } from '../../../services/api/auth/authApi';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import LoadingScreen from '../../Loading/Loading';
@@ -83,6 +83,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ formFor }) => {
       if (googleLogin.fulfilled.match(action)) {
         localStorage.setItem("token", action.payload.accessToken);
         toast.success("Google login successful!");
+        location.reload();
       } else {
         const errorMessage = action.payload ? String(action.payload) : "Google login failed";
         toast.error(errorMessage);
