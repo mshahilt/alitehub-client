@@ -22,6 +22,9 @@ const ProtectedAuthRoute: React.FC<ProtectedAuthRouteProps> = ({ element }) => {
         if (userRole === "user") {
           return <Navigate to="/" />;
         }
+        if(userRole === "admin") {
+          return <Navigate to="/admin/dashboard" />;
+        }
         if (userRole === "company") {
           return <Navigate to="/company" />;
         }

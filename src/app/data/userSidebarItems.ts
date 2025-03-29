@@ -7,6 +7,7 @@ import {
     User, 
     MoreHorizontal,
     FileText,
+    ProportionsIcon
 } from 'lucide-react';
 
 interface MenuItem {
@@ -28,6 +29,7 @@ const getUserMenuItems = (username?: string): MenuItem[] => [
     { icon: MessageSquare, label: 'Messages', link: '/message' },
     { icon: Layout, label: 'Jobs', link: '/jobs' },
     { icon: FileText, label: 'Applications', isActive: false, link: '/applications' },
+    { icon: ProportionsIcon, label: 'Companies', isActive: false, link: '/companies' },
     { icon: User, label: `${username || 'Profile'}`, link: username ? `/${username}` : '/profile' },
     { 
         icon: MoreHorizontal, 

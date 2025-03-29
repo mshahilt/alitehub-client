@@ -1,4 +1,4 @@
-import { Heart, MessageSquare, Share2, MoreHorizontal, Send, X } from "lucide-react";
+import { Heart, MessageSquare, X, Send } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import axiosInstance from "@/services/api/userInstance";
 
@@ -12,6 +12,7 @@ interface Post {
   user: {
     username: string;
     name: string;
+    profile_picture: string;
   }
 }
 
@@ -257,24 +258,24 @@ const PostCard = () => {
         const isSubmitting = submittingComment[post.id] || false;
 
         return (
-          <div key={post.id} className="bg-secondary p-4 rounded-lg shadow-md text-white ml-15">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
+          <div key={post.id} className="bg-secondary p-5 rounded-xl shadow-lg text-white">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                <img
+                  className="w-10 h-10 rounded-full bg-gray-800 flex-shrink-0"
+                  src={post?.user?.profile_picture || "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="}
+                  alt="Profile"
+                />
                 <div>
                   <h3 className="text-sm md:text-base font-semibold">{post.user.name}</h3>
                   <p className="text-xs md:text-sm text-gray-400">{post.user.username}</p>
-                    
                 </div>
-              </div>
-              <button className="flex flex-col items-end text-gray-400 hover:text-white">
-                <MoreHorizontal size={20} />
-                <p className="text-xs md:text-xs text-gray-400">{new Date(post.time).toLocaleString()}</p>
-              </button>
-
+                </div>
+              <p className="text-xs md:text-xs text-gray-400">{new Date(post.time).toLocaleString()}</p>
             </div>
 
-            <div className="mb-3">
-              <p className="text-sm md:text-base text-gray-200 mb-2 break-words">
+            <div className="mb-4">
+              <p className="text-sm md:text-base text-gray-200 mb-3 break-words">
                 {post.description}
                 {post.tags.map((tag, index) => (
                   <span key={index} className="text-blue-500 hover:underline cursor-pointer">
@@ -283,48 +284,50 @@ const PostCard = () => {
                 ))}
               </p>
               {post.media && (
-                <div className="rounded-lg overflow-hidden max-h-[300px]">
-                  <img src={post.media} alt="Post" className="w-full h-auto object-cover" />
+                <div className="rounded-xl overflow-hidden h-100 bg-gray-800 flex items-center justify-center">
+                  <img src={post.media} alt="Post" className="w-full h-full object-contain" />
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-4 mb-3 text-xs sm:text-sm text-gray-400">
-              <span>{postLikeData.count} Likes</span>
-              <span>{commentCount} Comments</span>
+            <div className="flex items-center gap-6 mb-3 text-sm text-gray-400">
+              <span className="flex items-center gap-1">
+                <Heart size={14} className="text-gray-400" />
+                {postLikeData.count}
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageSquare size={14} className="text-gray-400" />
+                {commentCount}
+              </span>
             </div>
 
-            <div className="flex items-center justify-between border-t border-gray-700 pt-3">
+            <div className="flex items-center gap-6 border-t border-gray-800 pt-3">
               <button
                 onClick={() => handleLike(post.id)}
-                className="flex items-center gap-2 text-gray-400 hover:text-white"
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-200"
               >
                 <Heart
                   size={20}
                   className={`${postLikeData.isLiked ? 'fill-current text-red-500' : ''} hover:fill-current`}
                 />
-                <span className="hidden sm:inline">Like</span>
+                <span>Like</span>
               </button>
               <button 
                 onClick={() => toggleComments(post.id)}
-                className="flex items-center gap-2 text-gray-400 hover:text-white"
+                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-200"
               >
                 <MessageSquare 
                   size={20}
                   className={isCommentsExpanded ? 'text-blue-500' : ''}
                 />
-                <span className="hidden sm:inline">Comment</span>
-              </button>
-              <button className="flex items-center gap-2 text-gray-400 hover:text-white">
-                <Share2 size={20} />
-                <span className="hidden sm:inline">Share</span>
+                <span>Comment</span>
               </button>
             </div>
 
             {isCommentsExpanded && (
-              <div className="mt-4 border-t border-gray-700 pt-4">
+              <div className="mt-4 border-t border-gray-800 pt-4">
                 <div className="flex items-start gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-gray-600 flex-shrink-0"></div>
+                  <div className="w-8 h-8 rounded-full bg-gray-800 flex-shrink-0"></div>
                   <div className="flex-grow relative">
                     <textarea
                       ref={el => (commentInputRefs.current[post.id] = el)}
@@ -335,26 +338,26 @@ const PostCard = () => {
                       }}
                       onKeyDown={e => handleKeyDown(e, post.id)}
                       placeholder="Write a comment..."
-                      className="w-full bg-gray-700 text-white rounded-lg p-2 pr-10 resize-none min-h-[40px] focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full bg-gray-900 text-white rounded-lg p-3 pr-10 resize-none min-h-[40px] focus:outline-none focus:ring-1 focus:ring-blue-500"
                       rows={1}
                     />
                     <button
                       onClick={() => submitComment(post.id)}
                       disabled={isSubmitting || !newComments[post.id]?.trim()}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-400 disabled:text-gray-500 disabled:cursor-not-allowed"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-400 disabled:text-gray-600 disabled:cursor-not-allowed"
                     >
                       <Send size={18} />
                     </button>
                   </div>
                 </div>
 
-                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                   {postComments.length > 0 ? (
                     postComments.map(comment => (
                       <div key={comment.id} className="flex gap-2 group">
-                        <div className="w-8 h-8 rounded-full bg-gray-600 flex-shrink-0"></div>
+                        <div className="w-8 h-8 rounded-full bg-gray-800 flex-shrink-0"></div>
                         <div className="flex-grow">
-                          <div className="bg-gray-700 rounded-lg p-3 relative">
+                          <div className="bg-gray-900 rounded-lg p-3 relative">
                             <div className="flex justify-between items-start">
                               <h4 className="font-medium text-sm">{comment.user.name || "Anonymous User"}</h4>
                               <button
@@ -366,16 +369,16 @@ const PostCard = () => {
                             </div>
                             <p className="text-sm text-gray-300 break-words">{comment.content}</p>
                           </div>
-                          <div className="text-xs text-gray-400 mt-1 flex gap-3 ml-2">
-                            <button className="hover:text-white">Like</button>
-                            <button className="hover:text-white">Reply</button>
+                          <div className="text-xs text-gray-500 mt-1 flex gap-3 ml-2">
+                            <button className="hover:text-white transition-colors duration-200">Like</button>
+                            <button className="hover:text-white transition-colors duration-200">Reply</button>
                             <span>{new Date(comment.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center text-gray-400 py-2">No comments yet. Be the first to comment!</div>
+                    <div className="text-center text-gray-500 py-2">No comments yet. Be the first to comment!</div>
                   )}
                 </div>
               </div>

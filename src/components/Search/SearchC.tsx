@@ -80,7 +80,7 @@ const SearchC: React.FC = () => {
   const formatNumber = (num: number): string => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
+    return num?.toString();
   };
 
   useEffect(() => {
@@ -293,13 +293,6 @@ const SearchC: React.FC = () => {
                 </div>
                 <div className="text-sm text-gray-400">{user.username}</div>
               </div>
-              <motion.button 
-                className="px-3 py-1 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors duration-200"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Follow
-              </motion.button>
             </motion.div>
           ))}
         </motion.div>
@@ -430,13 +423,6 @@ const SearchC: React.FC = () => {
                 <div className="text-sm text-gray-400">{company.industry} • {company.location}</div>
                 <div className="text-xs text-gray-500 mt-1">{formatNumber(company.employees)} employees</div>
               </div>
-              <motion.button 
-                className="px-3 py-1 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded text-white transition-colors duration-200"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Follow
-              </motion.button>
             </motion.div>
           ))}
         </motion.div>

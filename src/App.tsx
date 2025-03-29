@@ -20,6 +20,7 @@ import CompanyApplicationsPage from "./page/Company/CompanyApplicationsPage";
 import Jobs from "./page/User/Jobs";
 import CompanyApplicationDetailPage from "./page/Company/CompanyApplicationDetailPage";
 import UserApplicationDetailPage from "./page/User/ApplicationDetails";
+import Companies from "./page/User/Companies";
 import InterviewPage from "./page/User/InterviewPage";
 import CompanyInterviewPage from "./page/Company/CompanyInterviewPage";
 import CompanyEditJobPage from "./page/Company/CompanyEditJobPage";
@@ -78,6 +79,7 @@ const App = () => {
           <Route path="/jobs" element={<ProtectedRoute element={<Jobs />} requiredRole="user" />} />
           <Route path="/search" element={<ProtectedRoute element={<Search />} requiredRole="user" />} />
           <Route path="/message" element={<ProtectedRoute element={<Message />} requiredRole="user" />} />
+          <Route path="/companies" element={<ProtectedRoute element={<Companies />} requiredRole="user" />} />
           <Route path="/jobs/:jobId" element={<ProtectedRoute element={<Job />} requiredRole="user" />} />
           <Route path="/application/:id" element={<ProtectedRoute element={<UserApplicationDetailPage />} requiredRole="user" />} />
           <Route path="/interview/:roomId" element={<ProtectedRoute element={<InterviewPage />} requiredRole="user" />} />
@@ -94,10 +96,10 @@ const App = () => {
           <Route path="/:username" element={<ProtectedRoute element={<Profile />} requiredRole="user" />} />
           <Route path="/company/:companyIdentifier" element={<ProtectedRoute element={<CompanyProfilePage />} requiredRole="company" />} />
 
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<UserManagement />} />
-          <Route path="/admin/companies" element={<CompanyManagement />} />
-          <Route path="/admin/plans" element={<SubscriptionManagement />} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />} />
+          <Route path="/admin/users" element={<ProtectedRoute element={<UserManagement />} requiredRole="admin" />} />
+          <Route path="/admin/companies" element={<ProtectedRoute element={<CompanyManagement />} requiredRole="admin" />} />
+          <Route path="/admin/plans" element={<ProtectedRoute element={<SubscriptionManagement />} requiredRole="admin" />} />
         </Routes>
       </BrowserRouter>
     </>

@@ -1,7 +1,7 @@
 import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../services/api/userInstance";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import LoadingScreen from "../../components/Loading/Loading";
 
 interface FormData {
@@ -36,21 +36,25 @@ const AdminLogin = () => {
         email: formData.email,
         password: formData.password
       });
-      console.log(response)
-      if (response.status===200) {
-        console.log(response.data)
-        toast.success(response.data.message)
-        if (response.data.accessToken) {
-          localStorage.setItem("adminToken", response.data.accessToken);
-          
-          if (formData.remember) {
-            localStorage.setItem("adminEmail", formData.email);
-          } else {
-            localStorage.removeItem("adminEmail");
-          }
-        }
-        navigate("/admin/users"); 
+
+      // Extract data from the response
+      const { accessToken } = response.data.data;
+
+      // Store the access token in local storage
+      localStorage.setItem("token", accessToken);
+
+      // If "Remember Me" is checked, store user details in local storage
+      if (formData.remember) {
+        localStorage.setItem("rememberedUser", JSON.stringify({ email: formData.email }));
+      } else {
+        localStorage.removeItem("rememberedUser");
       }
+
+      // Navigate to the admin dashboard
+      navigate("/admin/users");
+
+      // Show success toast
+      toast.success(response.data.message || "Login successful!");
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Login failed. Please try again.";
       toast.error(errorMessage);
@@ -58,6 +62,13 @@ const AdminLogin = () => {
       setIsLoading(false);
     }
   };
+
+  // Pre-fill the email field if "Remember Me" was previously checked
+  const rememberedUser = localStorage.getItem("rememberedUser");
+  if (rememberedUser && formData.email === "") {
+    const { email } = JSON.parse(rememberedUser);
+    setFormData(prev => ({ ...prev, email }));
+  }
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -129,7 +140,6 @@ const AdminLogin = () => {
                   Remember me
                 </label>
               </div>
-
             </div>
 
             <div className="mt-6">
