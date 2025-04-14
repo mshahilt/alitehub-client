@@ -9,6 +9,7 @@ export interface User {
     name: string;
     username: string;
     email: string;
+    about: string;
     contact: {
         phone: string | null;
     };
@@ -18,6 +19,7 @@ export interface User {
     job_types: string[];
     industries: string[];
     skills: string[];
+    is_active: string | null;
     education: Array<{
         institution: string;
         degree: string;
@@ -60,6 +62,8 @@ const initialState: UserAuthState = {
         name: "",
         username: "",
         email: "",
+        about: "",
+        is_active:null,
         contact: {
             phone: null,
         },
@@ -89,6 +93,8 @@ const initialState: UserAuthState = {
         name: "",
         username: "",
         email: "",
+        about: "",
+        is_active: null,
         contact: {
             phone: null,
         },
@@ -304,6 +310,7 @@ const userAuthSlice = createSlice({
             .addCase(getMe.fulfilled, (state, action) => {
                 state.loading = false;
                 state.existingUser = action.payload;
+
             })
             .addCase(getMe.rejected, (state) => {
                 state.loading = false;

@@ -292,7 +292,6 @@ const MediaUpload: React.FC = () => {
       console.log("Upload Response:", uploadResponse.data);
       const uploadedMediaUrl = uploadResponse.data.secure_url;
   
-      // Send post details + uploaded media URL to backend
       const post = {
         title,
         description,
@@ -309,7 +308,6 @@ const MediaUpload: React.FC = () => {
         duration: 5000,
       });
   
-      // Reset form
       setTitle("");
       setDescription("");
       setTags([]);

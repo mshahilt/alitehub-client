@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle } from 'lucide-react';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -11,6 +10,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import StripeModal from './Stripe';
+import { useDispatch } from 'react-redux';
+import { AppDispatch } from '@/app/redux/store';
+import { getCompany } from '@/app/redux/slices/company/companyAuthSlice';
 
 export interface Plan {
   id: string;
@@ -23,17 +25,29 @@ export interface Plan {
 }
 
 interface SubscriptionProps {
-  plans: Plan[];
+  plans: Plan[] | [];
+  subscribedPlans: {
+    stripePriceId: string;
+    status: string;
+  } | null;
 }
 
-const Subscription: React.FC<SubscriptionProps> = ({ plans }) => {
+const Subscription: React.FC<SubscriptionProps> = ({ plans, subscribedPlans }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-
+  const dispatch = useDispatch<AppDispatch>();
   const handleSubscribe = (plan: Plan) => {
     setSelectedPlan(plan);
     setIsModalOpen(true);
   };
+
+  const isSubscribed = (plan: Plan) => {
+    return subscribedPlans?.stripePriceId === plan.stripePriceId && 
+           subscribedPlans?.status === 'active';
+  };
+  useEffect(() => {
+    dispatch(getCompany());
+  }, [dispatch]);
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
@@ -44,7 +58,7 @@ const Subscription: React.FC<SubscriptionProps> = ({ plans }) => {
             key={plan.id}
             className={`flex flex-col h-full border-2 bg-gray-800 text-white ${
               plan.name === 'EXCLUSIVE' ? 'border-blue-400 shadow-lg' : 'border-gray-600'
-            }`}
+            } ${isSubscribed(plan) ? 'border-green-500' : ''}`}
           >
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -52,10 +66,10 @@ const Subscription: React.FC<SubscriptionProps> = ({ plans }) => {
                 {plan.name === 'EXCLUSIVE' && (
                   <Badge className="bg-blue-600 text-white hover:bg-blue-700">Popular</Badge>
                 )}
+                {isSubscribed(plan) && (
+                  <Badge className="bg-green-600 text-white hover:bg-green-700">Active</Badge>
+                )}
               </div>
-              <CardDescription className="text-gray-400">
-                ID: {plan.id}
-              </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
               <div className="mb-6">
@@ -72,16 +86,25 @@ const Subscription: React.FC<SubscriptionProps> = ({ plans }) => {
               </div>
             </CardContent>
             <CardFooter className="pt-4">
-              <Button
-                className={`w-full text-white ${
-                  plan.name === 'EXCLUSIVE'
-                    ? 'bg-blue-500 hover:bg-blue-600'
-                    : 'bg-gray-700 hover:bg-gray-600'
-                }`}
-                onClick={() => handleSubscribe(plan)}
-              >
-                Subscribe Now
-              </Button>
+              {isSubscribed(plan) ? (
+                <Button
+                  className="w-full text-white bg-green-600 hover:bg-green-700 cursor-default"
+                  disabled
+                >
+                  Subscribed
+                </Button>
+              ) : (
+                <Button
+                  className={`w-full text-white ${
+                    plan.name === 'EXCLUSIVE'
+                      ? 'bg-blue-500 hover:bg-blue-600'
+                      : 'bg-gray-700 hover:bg-gray-600'
+                  }`}
+                  onClick={() => handleSubscribe(plan)}
+                >
+                  Subscribe Now
+                </Button>
+              )}
             </CardFooter>
             <div className="px-6 pb-4 text-xs text-gray-400">
               <p>Product ID: {plan.stripeProductId.substring(0, 10)}...</p>
