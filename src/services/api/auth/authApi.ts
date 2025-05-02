@@ -86,6 +86,15 @@ export const googleLogin = createAsyncThunk(
     }
   );
   
+  export const refreshToken = async (): Promise<string | null> => {
+      try {
+          const response = await axiosInstance.post("/auth/refresh-token", {}, { withCredentials: true });
+          return response.data.accessToken;
+      } catch (error) {
+          console.error("Refresh token request failed", error);
+          return null;
+      }
+  };
 // export const usernameCheck = createAsyncThunk(
 //     "user/usernameCheck",
 //     async(payload: {username:string}, {rejectWithValue}) =>{

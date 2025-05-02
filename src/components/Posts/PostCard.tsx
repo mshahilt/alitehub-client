@@ -359,7 +359,7 @@ const PostCard = () => {
                         <div className="flex-grow">
                           <div className="bg-gray-900 rounded-lg p-3 relative">
                             <div className="flex justify-between items-start">
-                              <h4 className="font-medium text-sm">{comment.user.name || "Anonymous User"}</h4>
+                              <h4 className="font-medium text-sm">{comment?.user?.name || "You"}</h4>
                               <button
                                 onClick={() => handleDeleteComment(post.id, comment.id)}
                                 className="text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"

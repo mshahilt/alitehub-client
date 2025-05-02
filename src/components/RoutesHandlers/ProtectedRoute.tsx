@@ -1,7 +1,7 @@
 import React, { ReactElement, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { refreshToken } from "../../services/api/interceptor";
+import { refreshToken } from "@/services/api/auth/authApi";
 import LoadingScreen from "../Loading/Loading";
 import { getMe } from "@/app/redux/slices/user/userAuthSlice";
 import { useDispatch } from "react-redux";

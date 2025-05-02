@@ -1,15 +1,5 @@
 import { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from "axios";
-import axiosInstance from "./userInstance";
-
-export const refreshToken = async (): Promise<string | null> => {
-    try {
-        const response = await axiosInstance.post("/auth/refresh-token", {}, { withCredentials: true });
-        return response.data.accessToken;
-    } catch (error) {
-        console.error("Refresh token request failed", error);
-        return null;
-    }
-};
+import { refreshToken } from "./auth/authApi";
 
 export const setupInterceptors = (axiosInstance: AxiosInstance) => {
     axiosInstance.interceptors.request.use(
