@@ -3,7 +3,9 @@ import debounce from 'lodash.debounce';
 import axiosInstance from '@/services/api/userInstance';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-
+import VideoPlayer from '../VideoPlayer/VideoPlayer';
+import { Heart, ImageIcon, MessageSquare } from 'lucide-react';
+import PostModal, {IPOST} from '../Posts/Post';
 interface User {
   id: string;
   name: string;
@@ -12,17 +14,7 @@ interface User {
   profile_picture: string;
 }
 
-interface Post {
-  id: string;
-  title: string;
-  description: string;
-  media: string;
-  tags: string[];
-  time: Date;
-  likes?: number;
-  comments?: number;
-}
-
+interface Post extends IPOST{}
 interface Job {
   id: string;
   jobTitle: string;
@@ -63,9 +55,14 @@ interface SearchResponse {
   };
 }
 
-const SearchC: React.FC = () => {
+interface SearchProps {
+  bgColor?: string;
+  isAdmin?: boolean
+}
+
+const SearchC: React.FC<SearchProps> = ({isAdmin = false}) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeFilter, setActiveFilter] = useState<'all' | 'users' | 'posts' | 'jobs' | 'companies'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'users' | 'posts' | 'jobs' | 'companies'>(isAdmin ? 'all' : 'all');
   const [users, setUsers] = useState<User[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -75,7 +72,13 @@ const SearchC: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [tabChanging, setTabChanging] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<IPOST | null>();
   const navigate = useNavigate();
+
+  const availableFilters = isAdmin 
+    ? ['all', 'users', 'companies'] as const
+    : ['all', 'users', 'posts', 'jobs', 'companies'] as const;
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -85,8 +88,10 @@ const SearchC: React.FC = () => {
 
   useEffect(() => {
     fetchRecentSearches();
-    fetchExplorePosts();
-  }, []);
+    if (!isAdmin) {
+      fetchExplorePosts();
+    }
+  }, [isAdmin]);
 
   const debouncedSearch = debounce(async () => {
     if (searchQuery.length > 0) {
@@ -121,13 +126,38 @@ const SearchC: React.FC = () => {
       setIsLoading(false);
     }
   };
-
   const fetchExplorePosts = async (): Promise<void> => {
     try {
       setIsLoading(true);
       const response = await axiosInstance.get('/search/explore');
-      const data: Post[] = response.data;
-      setExplorePosts(data);
+      const rawData: Post[] = response.data;
+  
+      const dataWithMediaType = await Promise.all(
+        rawData.map(async (post) => {
+          const extension = post.media.split('.').pop()?.toLowerCase();
+          let mediaType: string;
+  
+          if (['mp4', 'mov', 'webm'].includes(extension || '')) {
+            mediaType = 'video';
+          } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '')) {
+            mediaType = 'image';
+          } else {
+            mediaType = 'unknown';
+          }
+  
+          const { comment, like } = await fetchPostState(post._id);
+  
+          return {
+            ...post,
+            mediaType,
+            comments: comment,
+            likes: like
+          };
+        })
+      );
+  
+      setExplorePosts(dataWithMediaType);
+      console.log('Updated explorePosts:', dataWithMediaType);
     } catch (err) {
       setError('Failed to load explore posts');
       console.error(err);
@@ -135,6 +165,16 @@ const SearchC: React.FC = () => {
       setIsLoading(false);
     }
   };
+  
+
+  const fetchPostState = async (postId: string) => {
+
+      const [likeCountResponse, commentCountResponse] = await Promise.all([
+        axiosInstance.get(`/like/count/${postId}`),
+        axiosInstance.get(`/comment/count/${postId}`)
+      ]);
+      return {like: likeCountResponse.data.count, comment: commentCountResponse.data.count}
+  }
 
   const performSearch = async (): Promise<void> => {
     try {
@@ -143,7 +183,8 @@ const SearchC: React.FC = () => {
       const response = await axiosInstance.get('/search', {
         params: {
           q: searchQuery,
-          filter: activeFilter
+          filter: activeFilter,
+          isAdmin: isAdmin
         }
       });
       
@@ -151,8 +192,13 @@ const SearchC: React.FC = () => {
       
       setTimeout(() => {
         setUsers(data.results.users || []);
-        setPosts(data.results.posts || []);
-        setJobs(data.results.jobs || []);
+        if (!isAdmin) {
+          setPosts(data.results.posts || []);
+          setJobs(data.results.jobs || []);
+        } else {
+          setPosts([]);
+          setJobs([]);
+        }
         setCompanies(data.results.companies || []);
         setIsLoading(false);
       }, 300);
@@ -178,6 +224,22 @@ const SearchC: React.FC = () => {
     }
   };
 
+  const handleViewPost = (id: string) => {
+    try {
+      const selectedPost = explorePosts.find((elem) => elem._id === id);
+      setSelectedPost(selectedPost);
+      setTimeout(() => setIsModalOpen(true), 200);
+
+      console.log("selectedPost :", selectedPost);
+    } catch (error) {
+      
+    }
+  }
+  const closePostModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => setSelectedPost(null), 200);
+  };
+  
   const clearRecentSearches = async (): Promise<void> => {
     try {
       await axiosInstance.delete('/search/recent');
@@ -196,7 +258,9 @@ const SearchC: React.FC = () => {
     }
   };
 
-  const hasResults = users.length > 0 || posts.length > 0 || jobs.length > 0 || companies.length > 0;
+  const hasResults = (isAdmin 
+    ? (users.length > 0 || companies.length > 0) 
+    : (users.length > 0 || posts.length > 0 || jobs.length > 0 || companies.length > 0));
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -234,7 +298,7 @@ const SearchC: React.FC = () => {
     <div className="bg-gray-900 border-b border-gray-800">
       <div className="container mx-auto px-4">
         <div className="flex overflow-x-auto">
-          {(['all', 'users', 'posts', 'jobs', 'companies'] as const).map(filter => (
+          {availableFilters.map(filter => (
             <div key={filter} className="relative">
               <button
                 className={`px-4 py-2 font-medium text-sm transition-colors duration-200 ${activeFilter === filter ? 'text-blue-400' : 'text-gray-400'}`}
@@ -287,7 +351,10 @@ const SearchC: React.FC = () => {
                   {user.name.charAt(0).toUpperCase()}
                 </div>
               )}
-              <div className="ml-3 flex-1 cursor-pointer" onClick={() => navigate(`/${user.username}`)}>
+              <div 
+                className="ml-3 flex-1 cursor-pointer" 
+                onClick={() => navigate(isAdmin ? `/admin/user/${user.username}` : `/${user.username}`)}
+              >
                 <div className="flex items-center">
                   <span className="font-medium">{user.name}</span>
                 </div>
@@ -302,7 +369,7 @@ const SearchC: React.FC = () => {
   };
 
   const renderPostResults = () => {
-    if (activeFilter === 'all' || activeFilter === 'posts') {
+    if (!isAdmin && (activeFilter === 'all' || activeFilter === 'posts')) {
       return (
         posts.length > 0 ? (
           <motion.div
@@ -313,7 +380,7 @@ const SearchC: React.FC = () => {
             <h3 className="text-md font-medium text-gray-300 mb-2">Posts</h3>
             {posts.map(post => (
               <motion.div 
-                key={`post-${post.id}`} 
+                key={`post-${post._id}`} 
                 className="flex items-center p-2 hover:bg-gray-800 rounded-lg mb-2 transition-colors duration-200"
                 variants={itemVariants}
               >
@@ -351,7 +418,7 @@ const SearchC: React.FC = () => {
   };
   
   const renderJobResults = () => {
-    if (activeFilter === 'all' || activeFilter === 'jobs') {
+    if (!isAdmin && (activeFilter === 'all' || activeFilter === 'jobs')) {
       return jobs.length > 0 && (
         <motion.div
           initial="hidden"
@@ -373,7 +440,7 @@ const SearchC: React.FC = () => {
               <div className="ml-3 flex-1">
                 <span className="font-medium">{job.jobTitle}</span>
                 <div className="text-sm text-gray-400">{job.company} • {job.jobLocation}</div>
-                <div className="flex space-x-2 mt-1">
+                <div className="flex flex-wrap gap-2 mt-1">
                   <span className="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded">{job.jobType}</span>
                   {job.skills.slice(0, 2).map((skill, idx) => (
                     <span key={idx} className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">{skill}</span>
@@ -383,7 +450,7 @@ const SearchC: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-gray-400 ml-2">
                 {new Date(job.postedDate).toLocaleDateString()}
               </div>
             </motion.div>
@@ -418,7 +485,13 @@ const SearchC: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div className="ml-3 flex-1 cursor-pointer" onClick={() => console.log('View company:', company.id)}>
+              <div 
+                className="ml-3 flex-1 cursor-pointer" 
+                onClick={() => isAdmin 
+                  ? navigate(`/admin/company/${company.id}`) 
+                  : console.log('View company:', company.id)
+                }
+              >
                 <span className="font-medium">{company.name}</span>
                 <div className="text-sm text-gray-400">{company.industry} • {company.location}</div>
                 <div className="text-xs text-gray-500 mt-1">{formatNumber(company.employees)} employees</div>
@@ -445,7 +518,7 @@ const SearchC: React.FC = () => {
               <input
                 type="text"
                 className="block w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                placeholder="Search"
+                placeholder={isAdmin ? "Search users and companies" : "Search"}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
@@ -583,57 +656,97 @@ const SearchC: React.FC = () => {
                     </div>
                   </motion.div>
                 )}
+                {!isAdmin && (
+                 <motion.div
+                 variants={containerVariants}
+                 initial="hidden"
+                 animate="visible"
+                 className="max-w-6xl mx-auto"
+               >
+                 
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+                   {explorePosts.map((post) => (
+                     <motion.div 
+                       key={post._id} 
+                       className="group relative rounded-xl overflow-hidden bg-gray-800 dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow duration-300"
+                       variants={itemVariants}
+                       whileHover={{ 
+                         y: -5,
+                         transition: { duration: 0.2 }
+                       }}
+                       whileTap={{ scale: 0.98 }}
+                     >
+                       <div className="aspect-square relative overflow-hidden">
+                         {post.media ? (
+                           post.mediaType === 'video' ? (
+                             <div className="w-full h-full">
+                               <VideoPlayer 
+                                 src={post.media} 
+                                 noControls={true}
+                               />
+                               <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full">
+                                 Video
+                               </div>
+                             </div>
+                           ) : (
+                             <img
+                               src={post.media}
+                               alt={`Post by ${post.mediaType || 'unknown user'}`}
+                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                               loading="lazy"
+                             />
+                           )
+                         ) : (
+                           <div className="w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                             <ImageIcon className="h-12 w-12 text-gray-400 dark:text-gray-500" />
+                           </div>
+                         )}
+                         
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                       </div>
+                       
+                       <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-1 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                         <div className="flex items-center justify-between text-white">
+                           <div className="flex items-center space-x-3">
+                             <div className="flex items-center space-x-1" aria-label={`${post.likes || 0} likes`}>
+                               <Heart className="h-4 w-4" />
+                               <span className="text-sm font-medium">{formatNumber(post.likes || 0)}</span>
+                             </div>
+                             <div className="flex items-center space-x-1" aria-label={`${post.comments || 0} comments`}>
+                               <MessageSquare className="h-4 w-4" />
+                               <span className="text-sm font-medium">{formatNumber(post.comments || 0)}</span>
+                             </div>
+                           </div>
+                           
+                           <button 
+                             className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors"
+                             aria-label="View post details"
+                           >
+                             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                               <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                             </svg>
+                           </button>
+                         </div>
+                       </div>
+                       <a onClick={() => handleViewPost(post._id)} className="absolute inset-0 z-10 overflow-hidden text-0 indent-[-9999px]" aria-label={`View post ${post._id}`}>
+                         View post 
+                       </a>
+                     </motion.div>
+                   ))}
+                 </div>
+               </motion.div>
 
-                <motion.div
-                  variants={containerVariants}
-                >
-                  <h2 className="text-lg font-semibold mb-4">Explore</h2>
-                  <div className="grid grid-cols-3 gap-1 md:gap-4">
-                    {explorePosts.map((post, index) => (
-                      <motion.div 
-                        key={post.id} 
-                        className="relative aspect-square overflow-hidden rounded-lg"
-                        variants={itemVariants}
-                        initial="hidden"
-                        animate="visible"
-                        transition={{ delay: index * 0.05 }}
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        {post.media ? (
-                          <img src={post.media} alt="Post" className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" />
-                        ) : (
-                          <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                            <svg className="h-10 w-10 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity duration-300">
-                          <div className="flex space-x-4 text-white">
-                            <div className="flex items-center">
-                              <svg className="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                              </svg>
-                              <span>{formatNumber(post.likes || 0)}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <svg className="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
-                              </svg>
-                              <span>{formatNumber(post.comments || 0)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
+                )}
               </motion.div>
             )}
           </div>
         </AnimatePresence>
       </div>
+      <PostModal 
+        post={selectedPost} 
+        isOpen={isModalOpen} 
+        onClose={closePostModal} 
+      />
     </div>
   );
 };

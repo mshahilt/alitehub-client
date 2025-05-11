@@ -7,7 +7,7 @@ import SearchC from "@/components/Search/SearchC";
 
 const Search = () => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { existingUser } = useSelector((state: RootState) => state.userAuth)
+  const { existingUser } = useSelector((state: RootState) => state.userAuth);
   const userSidebarItems = getUserMenuItems(existingUser?.username);
 
   useEffect(() => {
@@ -22,11 +22,18 @@ const Search = () => {
 
   return (
     <div className="flex bg-primary min-h-screen">
-      <div className="w-1/6 h-screen z-20">
-        <Sidebar menuItems={userSidebarItems} isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
+      <div className="fixed top-0 left-0 h-screen z-20" style={{ width: isExpanded ? "16.666667%" : "auto" }}>
+        <Sidebar 
+          menuItems={userSidebarItems} 
+          isExpanded={isExpanded} 
+          setIsExpanded={setIsExpanded} 
+        />
       </div>
-      <div className="flex-1 min-h-screen flex justify-center p-6">
-        <div className="w-5xl max-w-7xl">
+      
+      <div className="invisible" style={{ width: isExpanded ? "16.666667%" : "auto" }}></div>
+      
+      <div className="flex-1 min-h-screen flex justify-center p-6 overflow-y-auto">
+        <div className="w-full max-w-7xl">
           <SearchC />
         </div>
       </div>

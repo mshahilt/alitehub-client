@@ -182,7 +182,8 @@ const companyAuthSlice = createSlice({
           ...action.payload.company,
           subscriptionDetails: action.payload.subscriptionDetails || null
         };
-        state.fetchedCompanyProfile.ownAcc = action.payload.company.id === state.company?.id;
+        // Set ownAcc properly by comparing IDs
+        state.fetchedCompanyProfile.ownAcc = action.payload?.company?.id === state?.company?.id;
         state.fetchedCompanyProfile.error = null;
       })
       .addCase(fetchCompanyProfile.rejected, (state, action) => {
@@ -193,37 +194,51 @@ const companyAuthSlice = createSlice({
     builder
       .addCase(getCompany.pending, (state) => {
         state.fetchedCompanyProfile.loading = true;
-        state.loading = true; // Set company loading true
+        state.loading = true;
         state.fetchedCompanyProfile.error = null;
       })
       .addCase(getCompany.fulfilled, (state, action: PayloadAction<Company>) => {
         state.fetchedCompanyProfile.loading = false;
-        state.loading = false; // Set company loading false
+        state.loading = false;
+        
+        // First update the company data
         state.company = action.payload;
-        state.fetchedCompanyProfile.data = action.payload;
-        state.fetchedCompanyProfile.ownAcc = true;
+        
+        // Then update the fetchedCompanyProfile with a new object to avoid reference issues
+        state.fetchedCompanyProfile = {
+          ...state.fetchedCompanyProfile,
+          data: { ...action.payload },
+          ownAcc: true,
+          error: null
+        };
       })
       .addCase(getCompany.rejected, (state, action) => {
         state.fetchedCompanyProfile.loading = false;
-        state.loading = false; // Set company loading false
+        state.loading = false;
         state.fetchedCompanyProfile.error = action.payload as string;
       });
 
     builder
       .addCase(updateCompanyProfilePicture.pending, (state) => {
-        state.loading = true; // Set company loading true
+        state.loading = true;
       })
       .addCase(updateCompanyProfilePicture.fulfilled, (state, action) => {
-        state.loading = false; // Set company loading false
+        state.loading = false;
+        
+        // Update profile picture in both states
         if (state.company) {
           state.company.profile_picture = action.payload.profileImage;
         }
+        
         if (state.fetchedCompanyProfile.data) {
-          state.fetchedCompanyProfile.data.profile_picture = action.payload.profileImage;
+          state.fetchedCompanyProfile.data = {
+            ...state.fetchedCompanyProfile.data,
+            profile_picture: action.payload.profileImage
+          };
         }
       })
       .addCase(updateCompanyProfilePicture.rejected, (state) => {
-        state.loading = false; // Set company loading false
+        state.loading = false;
       });
   }
 });

@@ -36,15 +36,21 @@ const Subscription: React.FC<SubscriptionProps> = ({ plans, subscribedPlans }) =
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const dispatch = useDispatch<AppDispatch>();
+  
+  const hasActiveSubscription = subscribedPlans?.status === 'active';
+
   const handleSubscribe = (plan: Plan) => {
-    setSelectedPlan(plan);
-    setIsModalOpen(true);
+    if (!hasActiveSubscription) {
+      setSelectedPlan(plan);
+      setIsModalOpen(true);
+    }
   };
 
   const isSubscribed = (plan: Plan) => {
     return subscribedPlans?.stripePriceId === plan.stripePriceId && 
            subscribedPlans?.status === 'active';
   };
+  
   useEffect(() => {
     dispatch(getCompany());
   }, [dispatch]);
@@ -52,6 +58,11 @@ const Subscription: React.FC<SubscriptionProps> = ({ plans, subscribedPlans }) =
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
       <h2 className="text-3xl font-bold text-center mb-8 text-white">Subscription Plans</h2>
+      {hasActiveSubscription && (
+        <div className="bg-blue-900 text-white p-4 mb-6 rounded-md text-center">
+          <p className="font-medium">You already have an active subscription.</p>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {plans.map((plan) => (
           <Card
@@ -73,7 +84,7 @@ const Subscription: React.FC<SubscriptionProps> = ({ plans, subscribedPlans }) =
             </CardHeader>
             <CardContent className="flex-grow">
               <div className="mb-6">
-                <span className="text-3xl font-bold">${plan.price.toFixed(2)}</span>
+                <span className="text-3xl font-bold">₹{plan.price.toFixed(2)}</span>
                 <span className="text-gray-400">/{plan.interval}</span>
               </div>
               <div className="space-y-2">
@@ -91,7 +102,14 @@ const Subscription: React.FC<SubscriptionProps> = ({ plans, subscribedPlans }) =
                   className="w-full text-white bg-green-600 hover:bg-green-700 cursor-default"
                   disabled
                 >
-                  Subscribed
+                  Current Plan
+                </Button>
+              ) : hasActiveSubscription ? (
+                <Button
+                  className="w-full text-white bg-gray-600 hover:bg-gray-600 cursor-not-allowed"
+                  disabled
+                >
+                  Already Subscribed
                 </Button>
               ) : (
                 <Button

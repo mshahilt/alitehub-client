@@ -165,7 +165,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ plan, onClose }) => {
       
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-400">
-          Your card will be charged ${plan.price.toFixed(2)}/{plan.interval}
+          Your card will be charged ₹{plan.price.toFixed(2)}/{plan.interval}
         </div>
         <img src="/stripe-badge.svg" alt="Powered by Stripe" className="h-8" />
       </div>

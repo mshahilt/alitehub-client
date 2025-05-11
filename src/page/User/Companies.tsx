@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axiosInstance from '@/services/api/userInstance';
 import { Building, Mail, Briefcase, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Company {
   id: string;
@@ -26,7 +27,7 @@ const Companies = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const navigate = useNavigate();
   const { existingUser } = useSelector((state: RootState) => state.userAuth);
   const userSidebarItems = getUserMenuItems(existingUser?.username);
   useEffect(() => {
@@ -63,6 +64,11 @@ const Companies = () => {
     const index = companyName.charCodeAt(0) % colors.length;
     return colors[index];
   };
+
+  const handleViewDetail = (companyIdentifier: string) => {
+    console.log("viewving")
+    navigate(`/u/company/${companyIdentifier}`)
+  }
 
   return (
     <div className="flex bg-navy-900 min-h-screen">
@@ -132,7 +138,7 @@ const Companies = () => {
                     </div>
                     
                     <div className="mt-4 flex justify-end">
-                      <button className="px-4 py-2 bg-blue-800 text-blue-200 text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-300">
+                      <button onClick={() => handleViewDetail(company.companyIdentifier)} className="px-4 py-2 bg-blue-800 text-blue-200 text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-300">
                         View Details
                       </button>
                     </div>

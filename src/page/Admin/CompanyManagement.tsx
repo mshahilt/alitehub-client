@@ -11,6 +11,7 @@ interface Company {
     email: string;
     industry: string;
     companyType: string;
+    companyIdentifier: string;
     isBlock: boolean;
 }
 
@@ -81,7 +82,7 @@ const CompanyManagement = () => {
                                     {company.isBlock ? "Unblock" : "Block"}
                                 </button>
                                 <button
-                                    onClick={() => navigate(`/admin/company/${company.id}`)}
+                                    onClick={() => navigate(`/admin/company/${company.companyIdentifier}`)}
                                     className="rounded bg-gray-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-700"
                                 >
                                     View Details

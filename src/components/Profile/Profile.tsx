@@ -25,9 +25,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 interface ProfileComponentProps {
   username: string;
+  isAdmin?: boolean;
 }
 
-const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
+const ProfileComponent: React.FC<ProfileComponentProps> = ({ username, isAdmin=false }) => {
   const dispatch: AppDispatch = useDispatch();
   const { user, loading, ownAccount } = useSelector((state: RootState) => state.userAuth);
   const [progress, setProgress] = useState(0);
@@ -217,9 +218,9 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto text-white bg-secondary">
+    <div className="max-w-4xl mx-auto text-white bg-gray-900">
       <div className="relative mb-20">
-        <div className="h-48 w-full bg-gradient-to-r from-blue-600 to-violet-500 rounded-lg shadow-lg"></div>
+        <div className="h-40 w-full bg-gradient-to-r from-blue-900 to-indigo-800 rounded-lg shadow-lg"></div>
         <div className="absolute -bottom-16 left-8">
           <Avatar className="w-32 h-32 border-4 border-gray-900 shadow-xl">
             <AvatarImage 
@@ -258,10 +259,11 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
               )}
             </div>
           </div>
-          
+          {!isAdmin && (
           <div className="mb-6">
             <ConnectionButtons />
           </div>
+          )}
         </div>
 
         <div className="flex gap-6 mt-2 text-sm">
@@ -401,7 +403,6 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
           </Card>
         )}
 
-        {/* Content Tabs */}
         <Tabs defaultValue="posts" className="mt-10">
           <TabsList className="bg-gray-800 border-b border-gray-700 w-full flex justify-start rounded-none h-auto">
             <TabsTrigger 
@@ -410,34 +411,10 @@ const ProfileComponent: React.FC<ProfileComponentProps> = ({ username }) => {
             >
               POSTS
             </TabsTrigger>
-            <TabsTrigger 
-              value="media" 
-              className="py-3 px-6 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=inactive]:text-gray-400 rounded-none bg-transparent"
-            >
-              MEDIA
-            </TabsTrigger>
-            <TabsTrigger 
-              value="saved" 
-              className="py-3 px-6 data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=inactive]:text-gray-400 rounded-none bg-transparent"
-            >
-              SAVED
-            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="posts" className="mt-6">
             <PostsGrid />
-          </TabsContent>
-          
-          <TabsContent value="media" className="mt-6">
-            <div className="text-center text-gray-400 py-16">
-              No media content available
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="saved" className="mt-6">
-            <div className="text-center text-gray-400 py-16">
-              No saved content available
-            </div>
           </TabsContent>
         </Tabs>
       </div>

@@ -9,7 +9,7 @@ import { AppDispatch } from "@/app/redux/store";
 
 interface ProtectedRouteProps {
   element: ReactElement;
-  requiredRole?: string;
+  requiredRole?: string | string[];
 }
 
 interface DecodedToken {
@@ -46,9 +46,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, requiredRole }
             localStorage.removeItem("token");
             setIsAuthorized(false);
           }
-        } else if (requiredRole && requiredRole !== role) {
-          setIsAuthorized(false);
         } else {
+          const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+          if (requiredRole && !allowedRoles.includes(role || "")) {
+            setIsAuthorized(false);
+            return;
+          }
           setUserRole(role || null);
           setIsAuthorized(true);
         }
@@ -72,13 +75,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ element, requiredRole }
   }
 
   if (!isAuthorized) {
-    if (requiredRole === "company") {
-      return <Navigate to={"/company/login"} />;
-    } else if (requiredRole === "admin") {
-      return <Navigate to={"/admin/login"} />;
-    } else {
-      return <Navigate to={"/login"} />;
-    }
+    const fallbackPath =
+      requiredRole === "company" || (Array.isArray(requiredRole) && requiredRole.includes("company"))
+        ? "/company/login"
+        : requiredRole === "admin" || (Array.isArray(requiredRole) && requiredRole.includes("admin"))
+        ? "/admin/login"
+        : "/login";
+
+    return <Navigate to={fallbackPath} />;
   }
 
   return element;

@@ -1,10 +1,12 @@
 import { Heart, MessageSquare, X, Send } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import axiosInstance from "@/services/api/userInstance";
+import VideoPlayer from "../VideoPlayer/VideoPlayer";
 
 interface Post {
   id: string;
   media: string;
+  mediaType: string;
   tags: string[];
   title: string;
   time: Date;
@@ -51,10 +53,32 @@ const PostCard = () => {
       if (newPosts.length === 0) {
         setHasMore(false);
       } else {
-        setPosts((prevPosts) => [
-          ...prevPosts,
-          ...newPosts.filter((newPost) => !prevPosts.some((post) => post.id === newPost.id)),
-        ]);
+        setPosts((prevPosts) => {
+          const uniqueNewPosts = newPosts.filter(
+            (newPost) => !prevPosts.some((post) => post.id === newPost.id)
+          );
+        
+          const postsWithMediaType = [...prevPosts, ...uniqueNewPosts].map((post) => {
+            const extension = post.media.split('.').pop()?.toLowerCase();
+            let mediaType: string;
+          
+            if (['mp4', 'mov', 'webm'].includes(extension || '')) {
+              mediaType = 'video';
+            } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension || '')) {
+              mediaType = 'image';
+            } else {
+              mediaType = 'unknown';
+            }
+          
+            return {
+              ...post,
+              mediaType
+            };
+          });          
+        
+          return postsWithMediaType;
+        });        
+
         setPage((prevPage) => prevPage + 1);
 
         newPosts.forEach(async (post) => {
@@ -283,11 +307,18 @@ const PostCard = () => {
                   </span>
                 ))}
               </p>
-              {post.media && (
-                <div className="rounded-xl overflow-hidden h-100 bg-gray-800 flex items-center justify-center">
+
+              {post.mediaType === "image" && post.media && (
+                <div className="rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center w-full h-64 sm:h-80 md:h-96 lg:h-[350px] xl:h-[450px]">
                   <img src={post.media} alt="Post" className="w-full h-full object-contain" />
                 </div>
               )}
+
+                {post.mediaType === "video" && post.media && (
+                <div className="rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center w-full h-64 sm:h-80 md:h-96 lg:h-[400px] xl:h-[500px]">
+                  <VideoPlayer src={post.media} noControls={true} />
+                </div>
+                )}
             </div>
 
             <div className="flex items-center gap-6 mb-3 text-sm text-gray-400">

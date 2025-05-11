@@ -56,11 +56,6 @@ const GenericTable = <T,>({ columns, data, actions, bgColor }: TableProps<T>) =>
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end p-4 border-t border-gray-800">
-            <button className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
-              View more...
-            </button>
-          </div>
         </div>
       </div>
     </div>

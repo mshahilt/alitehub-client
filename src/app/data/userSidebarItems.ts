@@ -14,7 +14,6 @@ interface MenuItem {
     icon: React.ComponentType;
     label: string;
     link?: string;
-    isActive?: boolean;
     subItems?: {
         label: string;
         link?: string;
@@ -23,13 +22,13 @@ interface MenuItem {
 }
 
 const getUserMenuItems = (username?: string): MenuItem[] => [
-    { icon: Grid, label: 'Elite hub', isActive: true, link: '/' },
+    { icon: Grid, label: 'Elite hub', link: '/' },
     { icon: Home, label: 'Home', link: '/' },
     { icon: Search, label: 'Search', link: '/search' },
     { icon: MessageSquare, label: 'Messages', link: '/message' },
     { icon: Layout, label: 'Jobs', link: '/jobs' },
-    { icon: FileText, label: 'Applications', isActive: false, link: '/applications' },
-    { icon: ProportionsIcon, label: 'Companies', isActive: false, link: '/companies' },
+    { icon: FileText, label: 'Applications', link: '/applications' },
+    { icon: ProportionsIcon, label: 'Companies', link: '/companies' },
     { icon: User, label: `${username || 'Profile'}`, link: username ? `/${username}` : '/profile' },
     { 
         icon: MoreHorizontal, 

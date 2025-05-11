@@ -37,23 +37,18 @@ const AdminLogin = () => {
         password: formData.password
       });
 
-      // Extract data from the response
       const { accessToken } = response.data.data;
 
-      // Store the access token in local storage
       localStorage.setItem("token", accessToken);
 
-      // If "Remember Me" is checked, store user details in local storage
       if (formData.remember) {
         localStorage.setItem("rememberedUser", JSON.stringify({ email: formData.email }));
       } else {
         localStorage.removeItem("rememberedUser");
       }
 
-      // Navigate to the admin dashboard
-      navigate("/admin/users");
+      navigate("/admin/dashboard");
 
-      // Show success toast
       toast.success(response.data.message || "Login successful!");
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Login failed. Please try again.";

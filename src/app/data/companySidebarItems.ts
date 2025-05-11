@@ -1,6 +1,5 @@
 import { 
-    Briefcase, 
-    Users, 
+    Briefcase,
     ClipboardList, 
     FileText, 
     Building, 
@@ -11,20 +10,30 @@ import {
 interface MenuItem {
     icon: React.ComponentType;
     label: string;
-    link: string;
-    isActive?: boolean;
+    link?: string;
+    subItems?: {
+        label: string;
+        link?: string;
+        action?: () => void;
+    }[];
 }
 
 
 const getCompanyMenuItems = (companyIdentifier?: string): MenuItem[] => [
-    { icon: Briefcase, label: 'Elite Hub', isActive: true,link:'/' },
-    { icon: Users, label: 'Candidate Search',isActive: false ,link:'/company/search' },
-    // { icon: MessageSquare, label: 'Messaged', isActive: false ,link:'/company/messages' },
-    // { icon: Bell, label: 'Notification' ,isActive: false ,link:'/company/notifications'},
-    { icon: ClipboardList, label: 'Job Management', isActive: false ,link:'/company/jobs'},
-    { icon: FileText, label: 'Applicants', isActive: false ,link:'/company/applications'},
-    { icon: BadgeDollarSignIcon, label: 'Exclusive Plans', isActive: false ,link:'/company/plans'},
-    { icon: Building, label: `${companyIdentifier}`, isActive: false ,link:`/company/${companyIdentifier}`},
-    { icon: MoreHorizontal, label: 'More', isActive: false ,link:'/'}
+    { icon: Briefcase, label: 'Elite Hub', link:'/' },
+    { icon: ClipboardList, label: 'Job Management', link:'/company/jobs'},
+    { icon: FileText, label: 'Applicants', link:'/company/applications'},
+    { icon: BadgeDollarSignIcon, label: 'Exclusive Plans', link:'/company/plans'},
+    { icon: Building, label: `${companyIdentifier}`, link:`/company/${companyIdentifier}`},
+    { 
+        icon: MoreHorizontal, 
+        label: 'More', 
+        subItems: [
+            { label: 'Logout', action: () => {
+                localStorage.removeItem("token");
+                location.reload();
+            }}
+        ]
+    }
 ];
 export default getCompanyMenuItems;

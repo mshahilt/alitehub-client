@@ -1,5 +1,5 @@
 import { Menu, X, ChevronUp } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useCallback, useRef, useEffect } from "react";
 
 interface SubMenuItem {
@@ -30,10 +30,32 @@ const Sidebar: React.FC<SidebarProps> = ({
   bgColor 
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+  const [activeSubItemIndices, setActiveSubItemIndices] = useState<Record<number, number>>({});
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize active items based on current location
+  useEffect(() => {
+    const currentPath = location.pathname;
+    menuItems.forEach((item, index) => {
+      if (item.link === currentPath) {
+        setActiveItemIndex(index);
+      }
+      
+      if (item.subItems) {
+        item.subItems.forEach((subItem, subIndex) => {
+          if (subItem.link === currentPath) {
+            setActiveItemIndex(index);
+            setActiveSubItemIndices(prev => ({ ...prev, [index]: subIndex }));
+          }
+        });
+      }
+    });
+  }, [location.pathname, menuItems]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -65,13 +87,54 @@ const Sidebar: React.FC<SidebarProps> = ({
     timeoutId.current = setTimeout(() => setHoveredItem(null), 200);
   };
 
-  const handleNavigate = (link?: string) => {
+  const handleNavigate = (link?: string, itemIndex?: number, subItemIndex?: number) => {
     if (link) {
       navigate(link);
+      
+      // Update active states
+      if (itemIndex !== undefined) {
+        setActiveItemIndex(itemIndex);
+        
+        if (subItemIndex !== undefined) {
+          setActiveSubItemIndices(prev => ({ ...prev, [itemIndex]: subItemIndex }));
+        }
+      }
+      
       if (isMobile) {
         setMobileMenuOpen(false);
       }
     }
+  };
+
+  const handleItemClick = (item: MenuItem, index: number) => {
+    const hasSubItems = item.subItems && item.subItems.length > 0;
+    
+    if (hasSubItems) {
+      setHoveredItem(hoveredItem === index ? null : index);
+    } else if (item.link) {
+      handleNavigate(item.link, index);
+    }
+    
+    // Set active item even if it doesn't have a link
+    setActiveItemIndex(index);
+  };
+
+  const handleSubItemClick = (subItem: SubMenuItem, itemIndex: number, subIndex: number) => {
+    if (subItem.action) {
+      subItem.action();
+      setMobileMenuOpen(false);
+    } else if (subItem.link) {
+      handleNavigate(subItem.link, itemIndex, subIndex);
+    }
+  };
+
+  // Helper function to determine if an item is active
+  const isItemActive = (index: number) => {
+    return activeItemIndex === index || menuItems[index]?.isActive;
+  };
+
+  const isSubItemActive = (itemIndex: number, subIndex: number) => {
+    return activeSubItemIndices[itemIndex] === subIndex;
   };
 
   // Desktop Sidebar
@@ -104,6 +167,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {menuItems.map((item, index) => {
               const Icon = item.icon;
               const hasSubItems = item.subItems && item.subItems.length > 0;
+              const active = isItemActive(index);
 
               return (
                 <li 
@@ -116,19 +180,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                     role="button"
                     tabIndex={0}
                     aria-expanded={hoveredItem === index}
-                    onClick={() => {
-                      if (hasSubItems) {
-                        setHoveredItem(hoveredItem === index ? null : index);
-                      } else if (item.link) {
-                        handleNavigate(item.link);
-                      }
-                    }}
+                    onClick={() => handleItemClick(item, index)}
                     className={`flex items-center p-3 mx-2 rounded-lg cursor-pointer 
-                    ${item.isActive ? "bg-purple-900/50 text-purple-300" : "text-gray-400"} 
+                    ${active ? "bg-purple-900/50 text-purple-300" : "text-gray-400"} 
                     hover:bg-purple-900 transition-all`}
                   >
-                    <Icon className={`w-6 h-6 min-w-6 ${item.isActive ? "text-purple-400" : ""}`} />
+                    <Icon className={`w-6 h-6 min-w-6 ${active ? "text-purple-400" : ""}`} />
                     {isExpanded && <span className="ml-3 text-sm font-medium">{item.label}</span>}
+                    
+                    {/* Add a highlight indicator */}
+                    {active && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-purple-400 rounded-r"></div>
+                    )}
                   </div>
 
                   {hasSubItems && hoveredItem === index && (
@@ -138,23 +201,28 @@ const Sidebar: React.FC<SidebarProps> = ({
                       onMouseEnter={() => handleMouseEnter(index)}
                       onMouseLeave={handleMouseLeave}
                     >
-                      {item.subItems?.map((subItem, subIndex) => (
-                        <div
-                          key={subIndex}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => {
-                            if (subItem.action) {
-                              subItem.action();
-                            } else if (subItem.link) {
-                              handleNavigate(subItem.link);
-                            }
-                          }}
-                          className="block px-4 py-2 text-sm text-gray-300 hover:bg-purple-900 hover:text-white cursor-pointer transition-colors"
-                        >
-                          {subItem.label}
-                        </div>
-                      ))}
+                      {item.subItems?.map((subItem, subIndex) => {
+                        const isSubActive = isSubItemActive(index, subIndex);
+                        
+                        return (
+                          <div
+                            key={subIndex}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleSubItemClick(subItem, index, subIndex)}
+                            className={`relative block px-4 py-2 text-sm 
+                            ${isSubActive ? "bg-purple-800 text-white" : "text-gray-300 hover:bg-purple-900 hover:text-white"} 
+                            cursor-pointer transition-colors`}
+                          >
+                            {subItem.label}
+                            
+                            {/* Add a highlight indicator for active subitem */}
+                            {isSubActive && (
+                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-400"></div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </li>
@@ -184,15 +252,22 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex justify-center flex-1">
             {menuItems.slice(0, 4).map((item, index) => {
               const Icon = item.icon;
+              const active = isItemActive(index);
+              
               return (
                 <button
                   key={index}
-                  onClick={() => item.link && handleNavigate(item.link)}
-                  className={`flex flex-col items-center justify-center p-2 mx-1 rounded-lg
-                  ${item.isActive ? "text-purple-400" : "text-gray-400"}`}
+                  onClick={() => handleItemClick(item, index)}
+                  className={`relative flex flex-col items-center justify-center p-2 mx-1 rounded-lg
+                  ${active ? "text-purple-400" : "text-gray-400"}`}
                 >
                   <Icon className="w-6 h-6" />
                   <span className="text-xs mt-1">{item.label}</span>
+                  
+                  {/* Active indicator for mobile bottom bar */}
+                  {active && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-purple-400 rounded-t-full"></div>
+                  )}
                 </button>
               );
             })}
@@ -222,52 +297,57 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {menuItems.map((item, index) => {
                   const Icon = item.icon;
                   const hasSubItems = item.subItems && item.subItems.length > 0;
+                  const active = isItemActive(index);
 
                   return (
                     <li key={index} className="rounded-lg overflow-hidden">
                       <div
                         role="button"
-                        onClick={() => {
-                          if (hasSubItems) {
-                            setHoveredItem(hoveredItem === index ? null : index);
-                          } else if (item.link) {
-                            handleNavigate(item.link);
-                          }
-                        }}
-                        className={`flex items-center justify-between p-3 cursor-pointer 
-                        ${item.isActive ? "bg-purple-900/50 text-purple-300" : "text-gray-300"} 
+                        onClick={() => handleItemClick(item, index)}
+                        className={`relative flex items-center justify-between p-3 cursor-pointer 
+                        ${active ? "bg-purple-900/50 text-purple-300" : "text-gray-300"} 
                         hover:bg-purple-900/30 transition-all`}
                       >
                         <div className="flex items-center">
-                          <Icon className="w-6 h-6 min-w-6 mr-3" />
+                          <Icon className={`w-6 h-6 min-w-6 mr-3 ${active ? "text-purple-400" : ""}`} />
                           <span className="text-sm font-medium">{item.label}</span>
                         </div>
+                        
                         {hasSubItems && (
                           <ChevronUp 
                             className={`w-5 h-5 transition-transform ${hoveredItem === index ? "rotate-0" : "rotate-180"}`} 
                           />
                         )}
+                        
+                        {/* Active indicator for mobile menu */}
+                        {active && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-400"></div>
+                        )}
                       </div>
 
                       {hasSubItems && hoveredItem === index && (
                         <div className="bg-purple-950/80 py-1 pl-10 border-l-2 border-purple-600">
-                          {item.subItems?.map((subItem, subIndex) => (
-                            <div
-                              key={subIndex}
-                              role="button"
-                              onClick={() => {
-                                if (subItem.action) {
-                                  subItem.action();
-                                  setMobileMenuOpen(false);
-                                } else if (subItem.link) {
-                                  handleNavigate(subItem.link);
-                                }
-                              }}
-                              className="block py-2 px-2 text-sm text-gray-300 hover:text-white transition-colors"
-                            >
-                              {subItem.label}
-                            </div>
-                          ))}
+                          {item.subItems?.map((subItem, subIndex) => {
+                            const isSubActive = isSubItemActive(index, subIndex);
+                            
+                            return (
+                              <div
+                                key={subIndex}
+                                role="button"
+                                onClick={() => handleSubItemClick(subItem, index, subIndex)}
+                                className={`relative block py-2 px-2 text-sm 
+                                ${isSubActive ? "text-purple-300 bg-purple-900/30" : "text-gray-300"} 
+                                hover:text-white transition-colors`}
+                              >
+                                {subItem.label}
+                                
+                                {/* Active indicator for submenu */}
+                                {isSubActive && (
+                                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-400"></div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </li>

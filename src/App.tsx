@@ -30,8 +30,10 @@ const CompanyApplicationDetailPage = lazy(() => import("./page/Company/CompanyAp
 const UserApplicationDetailPage = lazy(() => import("./page/User/ApplicationDetails"));
 const Companies = lazy(() => import("./page/User/Companies"));
 const InterviewPage = lazy(() => import("./page/User/InterviewPage"));
+const CompanyDetailPage = lazy(() => import("./page/User/CompanyDetailsPage"));
 const CompanyInterviewPage = lazy(() => import("./page/Company/CompanyInterviewPage"));
 const CompanyEditJobPage = lazy(() => import("./page/Company/CompanyEditJobPage"));
+const AdminCompanyPage = lazy(() => import("./page/Admin/AdminCompanyPage"))
 const Job = lazy(() => import("./page/User/Job"));
 const Application = lazy(() => import("./page/User/Applications"));
 const ResumeBuilder = lazy(() => import("./page/User/CreateResume"));
@@ -41,7 +43,8 @@ const Message = lazy(() => import("./page/User/Message"));
 const SubscriptionManagement = lazy(() => import("./page/Admin/SubscriptionManagement"));
 const CompanySubscriptionPage = lazy(() => import("./page/Company/CompanySubscriptionPage"));
 const AdminDashboard = lazy(() => import("./page/Admin/AdminDashboard"));
-
+const AdminSearchPage = lazy(() => import("./page/Admin/AdminSearchPage"));
+const AdminUserPage = lazy(() => import("./page/Admin/AdminUserPage"));
 // Route protection
 import ProtectedAuthRoute from "./components/RoutesHandlers/ProtectedAuthRoute";
 import ProtectedRoute from "./components/RoutesHandlers/ProtectedRoute";
@@ -89,7 +92,8 @@ const App = () => {
             <Route path="/interview/:roomId" element={<ProtectedRoute element={<InterviewPage />} requiredRole="user" />} />
             <Route path="/" element={<ProtectedRoute element={<Home />} requiredRole="user" />} />
             <Route path="/applications" element={<ProtectedRoute element={<Application />} requiredRole="user" />} />
-            <Route path="/:username" element={<ProtectedRoute element={<Profile />} requiredRole="user" />} />
+            <Route path="/u/company/:companyIdentifier" element={<ProtectedRoute element={<CompanyDetailPage />} requiredRole="user" />} />
+            <Route path="/:username" element={<ProtectedRoute element={<Profile />} requiredRole={["user"]} />} />
 
             {/* Company */}
             <Route path="/company" element={<ProtectedRoute element={<CompanyHomePage />} requiredRole="company" />} />
@@ -105,6 +109,9 @@ const App = () => {
             {/* Admin */}
             <Route path="/admin/dashboard" element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />} />
             <Route path="/admin/users" element={<ProtectedRoute element={<UserManagement />} requiredRole="admin" />} />
+            <Route path="/admin/user/:username" element={<ProtectedRoute element={<AdminUserPage />} requiredRole="admin" />} />
+            <Route path="/admin/company/:companyIdentifier" element={<ProtectedRoute element={<AdminCompanyPage />} requiredRole="admin" />} />
+            <Route path="/admin/search" element={<ProtectedRoute element={<AdminSearchPage />} requiredRole="admin" />} />
             <Route path="/admin/companies" element={<ProtectedRoute element={<CompanyManagement />} requiredRole="admin" />} />
             <Route path="/admin/plans" element={<ProtectedRoute element={<SubscriptionManagement />} requiredRole="admin" />} />
           </Routes>

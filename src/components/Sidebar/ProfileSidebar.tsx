@@ -137,7 +137,7 @@ const ProfileSidebar: React.FC = () => {
   }, []);
   
   const SidebarContent = () => (
-    <div className="bg-secondary rounded-xl shadow-lg overflow-hidden transition-all">
+    <div className="bg-gray-900 rounded-xl shadow-lg overflow-hidden transition-all">
       <div className="p-6 md:p-8">
         <div className="flex justify-between items-center mb-8 border-b pb-4 border-gray-700">
           <h1 className="text-2xl md:text-3xl font-bold text-white">
